@@ -1,0 +1,123 @@
+.gacha-container {
+    min-height: 100vh;
+    padding: 40px 20px;
+    color: white;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .gacha-container h1 {
+    margin-bottom: 10px;
+    font-size: 2.5em;
+  }
+  
+  .gacha-container p {
+    margin-bottom: 40px;
+    font-size: 1.2em;
+    opacity: 0.9;
+  }
+  
+  .pokemon-display {
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .pokemon-display.rolling {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  
+  .pokemon-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .pokemon-sprite {
+    width: 200px;
+    height: 200px;
+    image-rendering: pixelated;
+  }
+  
+  .pokemon-name {
+    font-size: 2em;
+    text-transform: capitalize;
+  }
+  
+  .pokemon-types {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .type-badge {
+    padding: 5px 15px;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+  }
+  
+  .type-normal { background: #A8A878; }
+  .type-fire { background: #F08030; }
+  .type-water { background: #6890F0; }
+  .type-grass { background: #78C850; }
+  .type-electric { background: #F8D030; }
+  .type-ice { background: #98D8D8; }
+  .type-fighting { background: #C03028; }
+  .type-poison { background: #A040A0; }
+  .type-ground { background: #E0C068; }
+  .type-flying { background: #A890F0; }
+  .type-psychic { background: #F85888; }
+  .type-bug { background: #A8B820; }
+  .type-rock { background: #B8A038; }
+  .type-ghost { background: #705898; }
+  .type-dark { background: #705848; }
+  .type-dragon { background: #7038F8; }
+  .type-steel { background: #B8B8D0; }
+  .type-fairy { background: #EE99AC; }
+  
+  .controls {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .roll-btn, .choose-btn {
+    padding: 15px 30px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+  }
+  
+  .roll-btn {
+    background: #ffcb05;
+    color: #2a75bb;
+  }
+  
+  .choose-btn {
+    background: #2a75bb;
+    color: white;
+  }
+  
+  .roll-btn:hover:not(:disabled), .choose-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  }
+  
+  .loading {
+    font-size: 1.5em;
+    padding: 40px;
+  }
