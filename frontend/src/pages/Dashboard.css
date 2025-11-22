@@ -1,0 +1,85 @@
+.dashboard-container {
+    min-height: 100vh;
+    padding: 40px 20px;
+    color: white;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2.5em;
+  }
+  
+  .logout-btn {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    max-width: 150px;
+  }
+  
+  .starter-section {
+    text-align: center;
+  }
+  
+  .starter-section h2 {
+    font-size: 2em;
+    margin-bottom: 30px;
+  }
+  
+  .pokemon-card {
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 40px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.2);
+    display: inline-block;
+  }
+  
+  .pokemon-card img {
+    width: 200px;
+    height: 200px;
+    image-rendering: pixelated;
+    margin-bottom: 20px;
+  }
+  
+  .pokemon-card h3 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    text-transform: capitalize;
+  }
+  
+  .no-starter {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .no-starter h2 {
+    margin-bottom: 20px;
+  }
+  
+  .no-starter button {
+    background: #ffcb05;
+    color: #2a75bb;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    max-width: 300px;
+  }
