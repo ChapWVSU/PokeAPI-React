@@ -29,8 +29,6 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-<<<<<<< HEAD
-=======
 // Helper function to get real moves from PokeAPI
 async function getRealMoves(moves) {
   try {
@@ -160,7 +158,6 @@ function calculateExpGained(opponentLevel, userLevel, result, bonusMultiplier) {
   return Math.floor(baseExp * bonusMultiplier);
 }
 
->>>>>>> zchandro-branch
 // Register endpoint
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -173,11 +170,7 @@ app.post('/api/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     db.run(
-<<<<<<< HEAD
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-=======
       'INSERT INTO users (username, email, password, trophies, coins) VALUES (?, ?, ?, 0, 100)',
->>>>>>> zchandro-branch
       [username, email, hashedPassword],
       function(err) {
         if (err) {
@@ -225,19 +218,6 @@ app.post('/api/login', (req, res) => {
         return res.status(400).json({ error: 'Invalid credentials' });
       }
 
-<<<<<<< HEAD
-      const token = jwt.sign({ userId: user.id, username }, JWT_SECRET);
-      res.json({
-        message: 'Login successful',
-        token,
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email,
-          hasChosenStarter: !!user.chosen_pokemon_id
-        }
-      });
-=======
       // Check if user has a starter Pokemon
       db.get(
         'SELECT COUNT(*) as hasStarter FROM user_pokemon WHERE user_id = ? AND is_starter = 1',
@@ -260,7 +240,6 @@ app.post('/api/login', (req, res) => {
           });
         }
       );
->>>>>>> zchandro-branch
     }
   );
 });
@@ -293,50 +272,13 @@ app.post('/api/choose-starter', authenticateToken, (req, res) => {
   db.serialize(() => {
     // Check if user already has a starter
     db.get(
-<<<<<<< HEAD
-      'SELECT chosen_pokemon_id FROM users WHERE id = ?',
-      [userId],
-      (err, user) => {
-=======
       'SELECT id FROM user_pokemon WHERE user_id = ? AND is_starter = 1',
       [userId],
       (err, existingStarter) => {
->>>>>>> zchandro-branch
         if (err) {
           return res.status(500).json({ error: 'Database error' });
         }
 
-<<<<<<< HEAD
-        if (user.chosen_pokemon_id) {
-          return res.status(400).json({ error: 'Starter already chosen' });
-        }
-
-        // Insert pokemon and update user
-        db.run(
-          'INSERT INTO user_pokemon (user_id, pokemon_id, pokemon_name, pokemon_data, is_starter) VALUES (?, ?, ?, ?, ?)',
-          [userId, pokemon.id, pokemon.name, JSON.stringify(pokemon), 1],
-          function(err) {
-            if (err) {
-              return res.status(500).json({ error: 'Failed to save Pokemon' });
-            }
-
-            db.run(
-              'UPDATE users SET chosen_pokemon_id = ? WHERE id = ?',
-              [pokemon.id, userId],
-              (err) => {
-                if (err) {
-                  return res.status(500).json({ error: 'Failed to update user' });
-                }
-
-                res.json({ 
-                  message: 'Starter Pokemon chosen successfully',
-                  pokemon 
-                });
-              }
-            );
-          }
-        );
-=======
         if (existingStarter) {
           // Update existing starter
           db.run(
@@ -390,7 +332,6 @@ app.post('/api/choose-starter', authenticateToken, (req, res) => {
             }
           );
         }
->>>>>>> zchandro-branch
       }
     );
   });
@@ -401,15 +342,9 @@ app.get('/api/dashboard', authenticateToken, (req, res) => {
   const userId = req.user.userId;
 
   db.get(
-<<<<<<< HEAD
-    `SELECT u.username, up.pokemon_name, up.pokemon_data 
-     FROM users u 
-     LEFT JOIN user_pokemon up ON u.chosen_pokemon_id = up.pokemon_id AND up.is_starter = 1
-=======
     `SELECT u.username, u.trophies, u.coins, up.pokemon_name, up.pokemon_data, up.level, up.experience
      FROM users u 
      LEFT JOIN user_pokemon up ON u.id = up.user_id AND up.is_starter = 1
->>>>>>> zchandro-branch
      WHERE u.id = ?`,
     [userId],
     (err, row) => {
@@ -417,11 +352,6 @@ app.get('/api/dashboard', authenticateToken, (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
 
-<<<<<<< HEAD
-      res.json({
-        user: { username: row.username },
-        starterPokemon: row.pokemon_data ? JSON.parse(row.pokemon_data) : null
-=======
       if (!row) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -440,16 +370,11 @@ app.get('/api/dashboard', authenticateToken, (req, res) => {
           experience: row.experience || 0,
           expForNextLevel: expForNextLevel
         } : null
->>>>>>> zchandro-branch
       });
     }
   );
 });
 
-<<<<<<< HEAD
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-=======
 // Get user's starter Pokemon for battle
 app.get('/api/user-starter', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
@@ -776,5 +701,4 @@ app.get('/api/battle-history', authenticateToken, (req, res) => {
       res.json(battles);
     }
   );
->>>>>>> zchandro-branch
 });

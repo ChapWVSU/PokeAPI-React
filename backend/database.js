@@ -17,11 +17,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 function initializeDatabase() {
-<<<<<<< HEAD
-  // Users table
-=======
   // Create tables with all columns (SQLite will ignore if they already exist)
->>>>>>> zchandro-branch
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,19 +25,12 @@ function initializeDatabase() {
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       chosen_pokemon_id INTEGER,
-<<<<<<< HEAD
-=======
       trophies INTEGER DEFAULT 0,
       coins INTEGER DEFAULT 100,
->>>>>>> zchandro-branch
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-<<<<<<< HEAD
-  // User pokemon collection table
-=======
->>>>>>> zchandro-branch
   db.run(`
     CREATE TABLE IF NOT EXISTS user_pokemon (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,17 +39,12 @@ function initializeDatabase() {
       pokemon_name TEXT NOT NULL,
       pokemon_data TEXT NOT NULL,
       is_starter BOOLEAN DEFAULT 0,
-<<<<<<< HEAD
-=======
       level INTEGER DEFAULT 5,
       experience INTEGER DEFAULT 0,
->>>>>>> zchandro-branch
       obtained_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
-<<<<<<< HEAD
-=======
 
   db.run(`
     CREATE TABLE IF NOT EXISTS user_battles (
@@ -91,5 +75,4 @@ function addColumnSafely(table, column, definition) {
       console.log(`Added ${column} column to ${table} table`);
     }
   });
->>>>>>> zchandro-branch
 }
