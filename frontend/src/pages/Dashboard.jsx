@@ -73,7 +73,6 @@ function Dashboard() {
       
       <div style={styles.content}>
         <header style={styles.header}>
-          <h1 style={styles.title}>Welcome, {user?.username}!</h1>
           <button onClick={logout} style={styles.logoutButton}>Logout</button>
         </header>
 
@@ -103,17 +102,6 @@ function Dashboard() {
             </div>
           </div>
         )}
-
-        {/* Quick Actions */}
-        <div style={styles.quickActions}>
-          <h2 style={styles.sectionTitle}>Quick Actions</h2>
-          <div style={styles.actionGrid}>
-            <a href="/battle" style={styles.actionCard}>
-              <div style={styles.actionIcon}>⚔️</div>
-              <div style={styles.actionText}>Battle Simulator</div>
-            </a>
-          </div>
-        </div>
 
         {dashboardData?.starterPokemon ? (
           <div style={styles.starterSection}>
@@ -184,15 +172,7 @@ const styles = {
     fontSize: '2.5em',
     color: 'white',
   },
-  logoutButton: {
-    background: '#ff6b6b',
-    color: 'white',
-    border: 'none',
-    padding: '10px 20px',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '1em',
-  },
+
   statsOverview: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

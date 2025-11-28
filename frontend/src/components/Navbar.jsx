@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   // Don't show navbar on login page
   if (location.pathname === '/login') {
@@ -57,11 +57,21 @@ function Navbar() {
           >
             Battle History
           </Link>
+          <Link 
+            to="/paid-gacha" 
+            style={{
+              ...styles.navLink,
+              ...(location.pathname === '/paid-gacha' ? styles.activeLink : {})
+            }}
+          >
+            Gacha
+          </Link>
         </div>
 
         <div style={styles.userInfo}>
           {user && <span style={styles.username}>Welcome, {user.username}</span>}
         </div>
+        <div><button onClick={logout} style={styles.logoutButton}>Logout</button></div>
       </div>
     </nav>
   );
@@ -78,6 +88,15 @@ const styles = {
     left: 0,
     right: 0,
     zIndex: 1000,
+  },
+    logoutButton: {
+    background: '#ff6b6b',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '1em',
   },
   navContent: {
     display: 'flex',
