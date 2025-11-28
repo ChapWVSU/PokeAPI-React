@@ -17,7 +17,11 @@ export const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 function initializeDatabase() {
+<<<<<<< HEAD
   // Users table
+=======
+  // Create tables with all columns (SQLite will ignore if they already exist)
+>>>>>>> zchandro-branch
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,11 +29,19 @@ function initializeDatabase() {
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       chosen_pokemon_id INTEGER,
+<<<<<<< HEAD
+=======
+      trophies INTEGER DEFAULT 0,
+      coins INTEGER DEFAULT 100,
+>>>>>>> zchandro-branch
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
+<<<<<<< HEAD
   // User pokemon collection table
+=======
+>>>>>>> zchandro-branch
   db.run(`
     CREATE TABLE IF NOT EXISTS user_pokemon (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,8 +50,46 @@ function initializeDatabase() {
       pokemon_name TEXT NOT NULL,
       pokemon_data TEXT NOT NULL,
       is_starter BOOLEAN DEFAULT 0,
+<<<<<<< HEAD
+=======
+      level INTEGER DEFAULT 5,
+      experience INTEGER DEFAULT 0,
+>>>>>>> zchandro-branch
       obtained_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
+<<<<<<< HEAD
+=======
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_battles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      opponent_pokemon_data TEXT NOT NULL,
+      result TEXT NOT NULL,
+      trophies_earned INTEGER DEFAULT 0,
+      coins_earned INTEGER DEFAULT 0,
+      battle_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+  `);
+
+  // Try to add missing columns with error handling
+  addColumnSafely('users', 'trophies', 'INTEGER DEFAULT 0');
+  addColumnSafely('users', 'coins', 'INTEGER DEFAULT 100');
+  addColumnSafely('user_pokemon', 'level', 'INTEGER DEFAULT 5');
+  addColumnSafely('user_pokemon', 'experience', 'INTEGER DEFAULT 0');
+}
+
+function addColumnSafely(table, column, definition) {
+  db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`, (err) => {
+    if (err) {
+      // Column likely already exists, which is fine
+      console.log(`Column ${column} already exists in ${table} table`);
+    } else {
+      console.log(`Added ${column} column to ${table} table`);
+    }
+  });
+>>>>>>> zchandro-branch
 }

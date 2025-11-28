@@ -6,6 +6,11 @@ import Loading from './pages/Loading';
 import Gacha from './pages/Gacha';
 import Congrats from './pages/Congrats';
 import Dashboard from './pages/Dashboard';
+import BattleSimulator from './pages/BattleSimulator';
+import Leaderboards from './pages/Leaderboards';
+import BattleHistory from './pages/BattleHistory';
+import PaidGacha from './pages/PaidGacha';
+import './App.css';
 
 function App() {
   return (
@@ -19,6 +24,10 @@ function App() {
             <Route path="/gacha" element={<ProtectedRoute><Gacha /></ProtectedRoute>} />
             <Route path="/congrats" element={<ProtectedRoute><Congrats /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/battle" element={<ProtectedRoute><BattleSimulator /></ProtectedRoute>} />
+            <Route path="/leaderboards" element={<ProtectedRoute><Leaderboards /></ProtectedRoute>} />
+            <Route path="/battle-history" element={<ProtectedRoute><BattleHistory /></ProtectedRoute>} />
+            <Route path="/paid-gacha" element={<ProtectedRoute><PaidGacha /></ProtectedRoute>} />
           </Routes>
         </div>
       </Router>

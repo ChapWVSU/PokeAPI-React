@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
 
-function Gacha() {
+function PaidGacha() {
   const [currentPokemon, setCurrentPokemon] = useState(null);
   const [loading, setLoading] = useState(false);
   const [rolling, setRolling] = useState(false);
@@ -74,13 +74,8 @@ function Gacha() {
 
   return (
     <div style={styles.container}>
-<<<<<<< HEAD
-      <h1 style={styles.title}>Here's Your Starter Pokemon!</h1>
-      <p style={styles.subtitle}>Your Bond Together Is Destiny!</p>
-=======
-      <h1 style={styles.title}>Choose Your Starter Pokemon!</h1>
-      <p style={styles.subtitle}>Keep rolling until you find the perfect partner!</p>
->>>>>>> zchandro-branch
+      <h1 style={styles.title}>Roll New Pokemon!</h1>
+      <p style={styles.subtitle}>150 COINS PER ROLL</p>
       
       <div style={{
         ...styles.pokemonDisplay,
@@ -110,16 +105,13 @@ function Gacha() {
       </div>
 
       <div style={styles.controls}>
-<<<<<<< HEAD
-=======
         <button 
           onClick={rollPokemon} 
           disabled={loading || rolling}
           style={styles.rollButton}
         >
-          {rolling ? 'Rolling...' : 'Roll Again'}
+          {rolling ? 'Rolling...' : '150 Coins'}
         </button>
->>>>>>> zchandro-branch
         
         <button 
           onClick={choosePokemon} 
@@ -217,4 +209,4 @@ const styles = {
   }
 };
 
-export default Gacha;
+export default PaidGacha
