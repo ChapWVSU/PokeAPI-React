@@ -34,29 +34,30 @@ function BattleSimulator() {
     }
   };
 
-  const startBattle = async () => {
-    try {
-      setBattleState('loading');
-      setBattleLog([]);
-      setBattleStats({ turns: 0, damageTaken: 0, damageDealt: 0 });
-      
-      const [userPoke, opponentPoke] = await Promise.all([
-        pokemonAPI.getUserStarter(),
-        pokemonAPI.getRandomOpponent()
-      ]);
+const startBattle = async () => {
+  try {
+    setBattleState('loading');
+    setBattleLog([]);
+    setBattleStats({ turns: 0, damageTaken: 0, damageDealt: 0 });
+    
+    // First get user Pokémon to know their level
+    const userPoke = await pokemonAPI.getUserStarter();
+    
+    // Then get opponent with level based on user's level
+    const opponentPoke = await pokemonAPI.getRandomOpponent(userPoke.level);
 
-      setUserPokemon({ ...userPoke, currentHp: userPoke.maxHp });
-      setOpponentPokemon({ ...opponentPoke, currentHp: opponentPoke.maxHp });
-      setBattleState('battling');
-      
-      addToBattleLog(`A wild ${opponentPoke.name} appeared!`, 'system');
-      addToBattleLog(`Go! ${userPoke.name}!`, 'system');
-      addToBattleLog(`${userPoke.name} is level ${userPoke.level} (${userPoke.experience}/${userPoke.expForNextLevel} EXP)`, 'info');
-    } catch (error) {
-      console.error('Failed to start battle:', error);
-      setBattleState('idle');
-    }
-  };
+    setUserPokemon({ ...userPoke, currentHp: userPoke.maxHp });
+    setOpponentPokemon({ ...opponentPoke, currentHp: opponentPoke.maxHp });
+    setBattleState('battling');
+    
+    addToBattleLog(`A wild ${opponentPoke.name} appeared!`, 'system');
+    addToBattleLog(`Go! ${userPoke.name}!`, 'system');
+    addToBattleLog(`${userPoke.name} is level ${userPoke.level} (${userPoke.experience}/${userPoke.expForNextLevel} EXP)`, 'info');
+  } catch (error) {
+    console.error('Failed to start battle:', error);
+    setBattleState('idle');
+  }
+};
 
   const addToBattleLog = (message, type = 'info') => {
     setBattleLog(prev => [...prev, { message, type, timestamp: new Date() }]);
