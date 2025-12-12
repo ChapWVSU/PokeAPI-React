@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import capitalize from '../utils/capitalize';
@@ -14,6 +15,7 @@ function BattleSimulator() {
   const [userStats, setUserStats] = useState(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Battle stats
   const [battleStats, setBattleStats] = useState({
@@ -231,6 +233,9 @@ const startBattle = async () => {
   const runFromBattle = () => {
     addToBattleLog('You ran from the battle!', 'system');
     endBattle('ran');
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 1000);
   };
 
   const getHpBarColor = (current, max) => {
