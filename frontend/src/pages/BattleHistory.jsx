@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { pokemonAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
+import capitalize from '../utils/capitalize';
 
 function BattleHistory() {
   const [battleHistory, setBattleHistory] = useState([]);
@@ -148,12 +149,12 @@ function BattleHistory() {
                     <div style={styles.opponentInfo}>
                       <img 
                         src={battle.opponent.sprites.front_default} 
-                        alt={battle.opponent.name}
+                        alt={capitalize(battle.opponent.name)}
                         style={styles.opponentSprite}
                       />
                       <div style={styles.opponentDetails}>
                         <div style={styles.opponentName}>
-                          {battle.opponent.name}
+                          {capitalize(battle.opponent.name)}
                         </div>
                         <div style={styles.opponentLevel}>
                           Lv. {battle.opponent.level}

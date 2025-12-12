@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
+import capitalize from '../utils/capitalize';
 
 function Gacha() {
   const [currentPokemon, setCurrentPokemon] = useState(null);
@@ -87,11 +88,11 @@ function Gacha() {
           <div style={styles.pokemonCard}>
             <img 
               src={currentPokemon.sprites.front_default} 
-              alt={currentPokemon.name}
+              alt={capitalize(currentPokemon.name)}
               style={styles.pokemonSprite}
             />
             <h2 style={styles.pokemonName}>
-              {currentPokemon.name.charAt(0).toUpperCase() + currentPokemon.name.slice(1)}
+              {capitalize(currentPokemon.name)}
             </h2>
             <div style={styles.types}>
               {currentPokemon.types.map(type => (

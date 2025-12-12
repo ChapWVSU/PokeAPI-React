@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { pokemonAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import capitalize from '../utils/capitalize';
 import Navbar from '../components/Navbar';
 
 function BattleSimulator() {
@@ -50,9 +51,9 @@ const startBattle = async () => {
     setOpponentPokemon({ ...opponentPoke, currentHp: opponentPoke.maxHp });
     setBattleState('battling');
     
-    addToBattleLog(`A wild ${opponentPoke.name} appeared!`, 'system');
-    addToBattleLog(`Go! ${userPoke.name}!`, 'system');
-    addToBattleLog(`${userPoke.name} is level ${userPoke.level} (${userPoke.experience}/${userPoke.expForNextLevel} EXP)`, 'info');
+    addToBattleLog(`A wild ${capitalize(opponentPoke.name)} appeared!`, 'system');
+    addToBattleLog(`Go! ${capitalize(userPoke.name)}!`, 'system');
+    addToBattleLog(`${capitalize(userPoke.name)} is level ${userPoke.level} (${userPoke.experience}/${userPoke.expForNextLevel} EXP)`, 'info');
   } catch (error) {
     console.error('Failed to start battle:', error);
     setBattleState('idle');
@@ -88,7 +89,7 @@ const startBattle = async () => {
     // Accuracy check
     const accuracyCheck = move.accuracy ? (Math.random() * 100) <= move.accuracy : true;
     if (!accuracyCheck) {
-      addToBattleLog(`${attacker.name}'s attack missed!`, 'miss');
+      addToBattleLog(`${capitalize(attacker.name)}'s attack missed!`, 'miss');
       return 0;
     }
     
@@ -112,8 +113,8 @@ const startBattle = async () => {
         damageTaken: prev.damageTaken + damage
       }));
 
-      addToBattleLog(`${opponentPokemon.name} used ${randomMove.name.replace('-', ' ')}!`, 'opponent');
-      addToBattleLog(`${userPokemon.name} took ${damage} damage!`, 'damage');
+      addToBattleLog(`${capitalize(opponentPokemon.name)} used ${randomMove.name.replace('-', ' ')}!`, 'opponent');
+      addToBattleLog(`${capitalize(userPokemon.name)} took ${damage} damage!`, 'damage');
 
       // Check if user Pokemon fainted
       setTimeout(() => {
@@ -143,8 +144,8 @@ const startBattle = async () => {
         damageDealt: prev.damageDealt + damage
       }));
 
-      addToBattleLog(`${userPokemon.name} used ${move.name.replace('-', ' ')}!`, 'user');
-      addToBattleLog(`${opponentPokemon.name} took ${damage} damage!`, 'damage');
+      addToBattleLog(`${capitalize(userPokemon.name)} used ${move.name.replace('-', ' ')}!`, 'user');
+      addToBattleLog(`${capitalize(opponentPokemon.name)} took ${damage} damage!`, 'damage');
 
       // Check if opponent fainted
       if (opponentPokemon.currentHp - damage <= 0) {
@@ -164,7 +165,7 @@ const startBattle = async () => {
     setBattleState(result);
     
     if (result === 'win') {
-      addToBattleLog(`You defeated ${opponentPokemon.name}!`, 'victory');
+      addToBattleLog(`You defeated ${capitalize(opponentPokemon.name)}!`, 'victory');
       
       // Calculate and show rewards
       const battleData = {
@@ -204,7 +205,7 @@ const startBattle = async () => {
       }
       
     } else if (result === 'lost') {
-      addToBattleLog(`Your ${userPokemon.name} fainted!`, 'defeat');
+      addToBattleLog(`Your ${capitalize(userPokemon.name)} fainted!`, 'defeat');
       const battleData = {
         result: 'lost',
         opponentLevel: opponentPokemon.level,
@@ -362,7 +363,7 @@ const startBattle = async () => {
                 {opponentPokemon && (
                   <>
                     <div style={styles.pokemonInfo}>
-                      <h3>{opponentPokemon.name} Lv.{opponentPokemon.level}</h3>
+                      <h3>{capitalize(opponentPokemon.name)} Lv.{opponentPokemon.level}</h3>
                       <div style={styles.types}>
                         {opponentPokemon.types.map(type => (
                           <span key={type} style={getTypeStyle(type)}>
@@ -377,8 +378,8 @@ const startBattle = async () => {
                       />
                     </div>
                     <img 
-                      src={opponentPokemon.sprites.front_default} 
-                      alt={opponentPokemon.name}
+                      src={opponentPokemon.sprites?.front_default || opponentPokemon.sprites?.other?.['official-artwork']?.front_default || ''} 
+                      alt={capitalize(opponentPokemon.name)}
                       style={styles.pokemonSprite}
                     />
                   </>
@@ -408,12 +409,12 @@ const startBattle = async () => {
                 {userPokemon && (
                   <>
                     <img 
-                      src={userPokemon.sprites.front_default} 
-                      alt={userPokemon.name}
+                      src={userPokemon.sprites?.back_default || userPokemon.sprites?.front_default || ''} 
+                      alt={capitalize(userPokemon.name)}
                       style={styles.pokemonSprite}
                     />
                     <div style={styles.pokemonInfo}>
-                      <h3>{userPokemon.name}</h3>
+                      <h3>{capitalize(userPokemon.name)}</h3>
                       <ExpBar 
                         current={userPokemon.experience} 
                         max={userPokemon.expForNextLevel} 
@@ -479,7 +480,7 @@ const startBattle = async () => {
                 <h2 style={styles.levelUpTitle}>🎉 Level Up! 🎉</h2>
                 <div style={styles.levelUpContent}>
                   <div style={styles.levelUpMessage}>
-                    <strong>{userPokemon?.name}</strong> grew to <strong>Level {rewards.newLevel}!</strong>
+                    <strong>{capitalize(userPokemon?.name)}</strong> grew to <strong>Level {rewards.newLevel}!</strong>
                   </div>
                   {rewards.levelsGained > 1 && (
                     <div style={styles.multiLevel}>

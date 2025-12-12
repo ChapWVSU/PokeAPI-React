@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
+import capitalize from '../utils/capitalize';
 
 function Congrats() {
   const [starterPokemon, setStarterPokemon] = useState(null);
@@ -39,13 +40,13 @@ function Congrats() {
       <div style={styles.content}>
         <h1 style={styles.title}>Congratulations!</h1>
         <h2 style={styles.subtitle}>
-          You chose {starterPokemon.name.charAt(0).toUpperCase() + starterPokemon.name.slice(1)}!
+          You chose {capitalize(starterPokemon.name)}!
         </h2>
         
         <div style={styles.pokemon}>
           <img 
             src={starterPokemon.sprites.front_default} 
-            alt={starterPokemon.name}
+            alt={capitalize(starterPokemon.name)}
             style={styles.sprite}
           />
         </div>

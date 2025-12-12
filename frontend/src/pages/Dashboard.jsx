@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { pokemonAPI } from '../services/api';
 import Navbar from '../components/Navbar';
+import capitalize from '../utils/capitalize';
 
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -109,11 +110,11 @@ function Dashboard() {
             <div style={styles.pokemonCard}>
               <img 
                 src={dashboardData.starterPokemon.sprites.front_default} 
-                alt={dashboardData.starterPokemon.name}
+                alt={capitalize(dashboardData.starterPokemon.name)}
                 style={styles.pokemonSprite}
               />
               <h3 style={styles.pokemonName}>
-                {dashboardData.starterPokemon.name.charAt(0).toUpperCase() + dashboardData.starterPokemon.name.slice(1)}
+                {capitalize(dashboardData.starterPokemon.name)}
               </h3>
               <div style={styles.pokemonTypes}>
                 {dashboardData.starterPokemon.types.map(type => (

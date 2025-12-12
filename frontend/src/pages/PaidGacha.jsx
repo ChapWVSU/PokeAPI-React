@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
 import Navbar from '../components/Navbar';
+import capitalize from '../utils/capitalize';
 
 function PaidGacha() {
   const [currentPokemon, setCurrentPokemon] = useState(null);
@@ -117,12 +118,11 @@ function PaidGacha() {
             <div style={styles.pokemonCard}>
               <img
                 src={currentPokemon.sprites.front_default}
-                alt={currentPokemon.name}
+                alt={capitalize(currentPokemon.name)}
                 style={styles.sprite}
               />
               <h2 style={styles.pokemonName}>
-                {currentPokemon.name.charAt(0).toUpperCase() +
-                  currentPokemon.name.slice(1)}
+                {capitalize(currentPokemon.name)}
               </h2>
 
               <div style={styles.types}>
