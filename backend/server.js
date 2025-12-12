@@ -157,7 +157,77 @@ function calculateExpGained(opponentLevel, userLevel, result, bonusMultiplier) {
   
   return Math.floor(baseExp * bonusMultiplier);
 }
+// PAID GACHA — costs 150 coins
+app.post('/api/roll-paid-gacha', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
 
+  db.get(
+    'SELECT coins FROM users WHERE id = ?',
+    [userId],
+    async (err, user) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+
+      if (!user || user.coins < 150) {
+        return res.status(400).json({ error: 'Not enough coins' });
+      }
+
+      try {
+        // Get Pokémon first
+        const randomId = Math.floor(Math.random() * 151) + 1;
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
+        const pokemonData = await response.json();
+
+        const pokemon = {
+          id: pokemonData.id,
+          name: pokemonData.name,
+          sprites: pokemonData.sprites,
+          types: pokemonData.types.map(t => t.type.name)
+        };
+
+        // Deduct coins
+        db.run(
+          'UPDATE users SET coins = coins - 150 WHERE id = ?',
+          [userId],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: 'Failed to deduct coins' });
+            }
+
+            // Save the obtained Pokemon to user's collection (non-starter)
+            db.run(
+              'INSERT INTO user_pokemon (user_id, pokemon_id, pokemon_name, pokemon_data, is_starter, level, experience) VALUES (?, ?, ?, ?, 0, 5, 0)',
+              [userId, pokemon.id, pokemon.name, JSON.stringify(pokemon)],
+              function(err) {
+                if (err) {
+                  console.error('Failed to save Pokemon to collection:', err);
+                }
+
+                // Get updated coins
+                db.get(
+                  'SELECT coins FROM users WHERE id = ?',
+                  [userId],
+                  (err, updatedUser) => {
+                    if (err) {
+                      console.error('Failed to get updated coins:', err);
+                    }
+
+                    res.json({
+                      message: 'Roll successful! Pokémon added to your collection.',
+                      pokemon,
+                      newCoins: updatedUser?.coins || user.coins - 150
+                    });
+                  }
+                );
+              }
+            );
+          }
+        );
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch Pokemon' });
+      }
+    }
+  );
+});
 // Register endpoint
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -440,8 +510,13 @@ app.get('/api/random-opponent', authenticateToken, async (req, res) => {
     const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
     const pokemonData = await response.json();
     
-    // Calculate opponent level (1-15)
-    const level = Math.floor(Math.random() * 15) + 1;
+    // Get user's level from query parameter or default to 5
+    const userLevel = parseInt(req.query.level) || 5;
+    
+    // Calculate opponent level (within ±2 levels of user's Pokémon)
+    const minLevel = Math.max(1, userLevel - 2);
+    const maxLevel = Math.min(15, userLevel + 2);
+    const level = Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
     
     // Get real moves for opponent
     const moves = await getRealMoves(pokemonData.moves);

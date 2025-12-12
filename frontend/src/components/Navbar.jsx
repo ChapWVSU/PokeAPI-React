@@ -1,25 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  // 1. Inject Pixel Font (Safety check to ensure it loads)
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => document.head.removeChild(link);
+  }, []);
 
   // Don't show navbar on login page
   if (location.pathname === '/login') {
     return null;
   }
 
+  const pixelFont = "'Press Start 2P', monospace";
+
   return (
-    <nav style={styles.navbar}>
+    <nav style={{...styles.navbar, fontFamily: pixelFont}}>
       <div style={styles.navContent}>
+        
+        {/* Logo Section */}
         <div style={styles.logo}>
           <Link to="/dashboard" style={styles.logoLink}>
-            🎮 Pokemon Arena
+            <span style={{color: '#ffcb05'}}>●</span> POKE KO
           </Link>
         </div>
         
+        {/* Navigation Links */}
         <div style={styles.navLinks}>
           <Link 
             to="/dashboard" 
@@ -28,7 +42,7 @@ function Navbar() {
               ...(location.pathname === '/dashboard' ? styles.activeLink : {})
             }}
           >
-            Dashboard
+            DASHBOARD
           </Link>
           <Link 
             to="/battle" 
@@ -37,7 +51,7 @@ function Navbar() {
               ...(location.pathname === '/battle' ? styles.activeLink : {})
             }}
           >
-            Battle Simulator
+            BATTLE
           </Link>
           <Link 
             to="/leaderboards" 
@@ -46,7 +60,7 @@ function Navbar() {
               ...(location.pathname === '/leaderboards' ? styles.activeLink : {})
             }}
           >
-            Leaderboards
+            RANKING
           </Link>
           <Link 
             to="/battle-history" 
@@ -55,13 +69,29 @@ function Navbar() {
               ...(location.pathname === '/battle-history' ? styles.activeLink : {})
             }}
           >
-            Battle History
+            HISTORY
+          </Link>
+          <Link 
+            to="/paid-gacha" 
+            style={{
+              ...styles.navLink,
+              ...(location.pathname === '/paid-gacha' ? styles.activeLink : {})
+            }}
+          >
+            GACHA
           </Link>
         </div>
 
-        <div style={styles.userInfo}>
-          {user && <span style={styles.username}>Welcome, {user.username}</span>}
+        {/* User Info & Logout */}
+        <div style={styles.rightSection}>
+          <div style={styles.userInfo}>
+            {user && <span style={styles.username}>ID: {user.username?.toUpperCase()}</span>}
+          </div>
+          <button onClick={logout} style={{...styles.logoutButton, fontFamily: pixelFont}}>
+            LOGOUT
+          </button>
         </div>
+
       </div>
     </nav>
   );
@@ -69,15 +99,11 @@ function Navbar() {
 
 const styles = {
   navbar: {
-    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
-    padding: '0 20px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-    borderBottom: '3px solid #e74c3c',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
+    background: '#fff',
+    borderBottom: '4px solid #000',
+    padding: '10px 0',
+    width: '100%',
+    marginBottom: '20px',
   },
   navContent: {
     display: 'flex',
@@ -85,40 +111,71 @@ const styles = {
     alignItems: 'center',
     maxWidth: '1200px',
     margin: '0 auto',
-    height: '60px',
+    padding: '0 20px',
+    flexWrap: 'wrap',
+    gap: '15px',
   },
+  
+  // Logo Styles
   logo: {
-    fontSize: '1.5em',
+    fontSize: '12px',
     fontWeight: 'bold',
+    textShadow: '2px 2px 0 #ddd',
   },
   logoLink: {
-    color: '#ecf0f1',
+    color: '#000',
     textDecoration: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
   },
+
+  // Link Styles
   navLinks: {
     display: 'flex',
-    gap: '20px',
+    gap: '10px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   navLink: {
-    color: '#bdc3c7',
+    color: '#555',
     textDecoration: 'none',
-    padding: '8px 16px',
-    borderRadius: '5px',
-    transition: 'all 0.3s ease',
-    fontWeight: '500',
+    padding: '8px 10px',
+    fontSize: '8px',
+    border: '2px solid transparent',
+    transition: 'all 0.2s ease',
   },
   activeLink: {
-    color: '#ecf0f1',
-    background: 'rgba(231, 76, 60, 0.2)',
-    border: '1px solid #e74c3c',
+    color: '#000',
+    border: '2px solid #000',
+    background: '#ffcb05', // Pokemon Yellow highlight
+    boxShadow: '2px 2px 0 rgba(0,0,0,0.2)',
+  },
+
+  // Right Section
+  rightSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
   },
   userInfo: {
-    color: '#ecf0f1',
+    color: '#000',
+    fontSize: '8px',
   },
   username: {
-    fontSize: '0.9em',
-    opacity: 0.9,
-  }
+    borderBottom: '2px solid #ddd',
+    paddingBottom: '2px',
+  },
+  logoutButton: {
+    background: '#ff6b6b',
+    color: '#fff',
+    border: '2px solid #000',
+    padding: '6px 12px',
+    cursor: 'pointer',
+    fontSize: '8px',
+    boxShadow: '2px 2px 0 #000',
+    textTransform: 'uppercase',
+  },
 };
 
 export default Navbar;

@@ -28,6 +28,9 @@ export const authAPI = {
 export const pokemonAPI = {
   getRandomPokemon: () => 
     api.get('/random-pokemon').then(res => res.data),
+
+  rollPaidGacha: () =>
+    api.post('/roll-paid-gacha').then(res => res.data),
   
   chooseStarter: (pokemon) => 
     api.post('/choose-starter', { pokemon }).then(res => res.data),
@@ -35,14 +38,14 @@ export const pokemonAPI = {
   getDashboardData: () => 
     api.get('/dashboard').then(res => res.data),
   
-  getRandomOpponent: () => 
-    api.get('/random-opponent').then(res => res.data),
+  getRandomOpponent: (userLevel) => 
+    api.get(`/random-opponent?level=${userLevel}`).then(res => res.data),
   
   getUserStarter: () => 
     api.get('/user-starter').then(res => res.data),
   
-  submitBattleResult: (battleData) => 
-    api.post('/battle-result', battleData).then(res => res.data),
+  submitBattleResult: (battleData) =>
+  api.post('/battle-result', battleData).then(res => res.data),
   
   getUserStats: () => 
     api.get('/user-stats').then(res => res.data),

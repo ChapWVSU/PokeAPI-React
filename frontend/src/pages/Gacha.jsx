@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
+import capitalize from '../utils/capitalize';
 
 function Gacha() {
   const [currentPokemon, setCurrentPokemon] = useState(null);
   const [loading, setLoading] = useState(false);
   const [rolling, setRolling] = useState(false);
   const navigate = useNavigate();
+
+  // 1. Inject Pixel Font
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => document.head.removeChild(link);
+  }, []);
 
   const rollPokemon = async () => {
     setRolling(true);
@@ -41,171 +51,265 @@ function Gacha() {
     rollPokemon();
   }, []);
 
-  const getTypeStyle = (type) => ({
-    padding: '5px 15px',
-    borderRadius: '20px',
-    color: 'white',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    fontSize: '0.8em',
-    background: typeColors[type] || '#A8A878'
-  });
+  const pixelFont = "'Press Start 2P', monospace";
 
   const typeColors = {
-    normal: '#A8A878',
-    fire: '#F08030',
-    water: '#6890F0',
-    grass: '#78C850',
-    electric: '#F8D030',
-    ice: '#98D8D8',
-    fighting: '#C03028',
-    poison: '#A040A0',
-    ground: '#E0C068',
-    flying: '#A890F0',
-    psychic: '#F85888',
-    bug: '#A8B820',
-    rock: '#B8A038',
-    ghost: '#705898',
-    dark: '#705848',
-    dragon: '#7038F8',
-    steel: '#B8B8D0',
-    fairy: '#EE99AC'
+    normal: '#A8A878', fire: '#F08030', water: '#6890F0', grass: '#78C850',
+    electric: '#F8D030', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+    ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+    rock: '#B8A038', ghost: '#705898', dark: '#705848', dragon: '#7038F8',
+    steel: '#B8B8D0', fairy: '#EE99AC'
   };
 
-  return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Choose Your Starter Pokemon!</h1>
-      <p style={styles.subtitle}>Keep rolling until you find the perfect partner!</p>
-      
-      <div style={{
-        ...styles.pokemonDisplay,
-        ...(rolling ? styles.rolling : {})
-      }}>
-        {loading ? (
-          <div style={styles.loading}>Loading...</div>
-        ) : currentPokemon ? (
-          <div style={styles.pokemonCard}>
-            <img 
-              src={currentPokemon.sprites.front_default} 
-              alt={currentPokemon.name}
-              style={styles.pokemonSprite}
-            />
-            <h2 style={styles.pokemonName}>
-              {currentPokemon.name.charAt(0).toUpperCase() + currentPokemon.name.slice(1)}
-            </h2>
-            <div style={styles.types}>
-              {currentPokemon.types.map(type => (
-                <span key={type} style={getTypeStyle(type)}>
-                  {type}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
+  const getTypeStyle = (type) => ({
+    padding: '4px 8px',
+    border: '2px solid rgba(0,0,0,0.2)',
+    color: 'white',
+    textTransform: 'uppercase',
+    fontSize: '0.6em',
+    background: typeColors[type] || '#A8A878',
+    fontFamily: pixelFont,
+    textShadow: '1px 1px 0 #000',
+    marginRight: '4px',
+    display: 'inline-block'
+  });
 
-      <div style={styles.controls}>
-        <button 
-          onClick={rollPokemon} 
-          disabled={loading || rolling}
-          style={styles.rollButton}
-        >
-          {rolling ? 'Rolling...' : 'Roll Again'}
-        </button>
-        
-        <button 
-          onClick={choosePokemon} 
-          disabled={!currentPokemon || loading}
-          style={styles.chooseButton}
-        >
-          {loading ? 'Choosing...' : 'Choose This Pokemon!'}
-        </button>
+  return (
+    <div style={{ ...styles.container, fontFamily: pixelFont }}>
+      
+      {/* Background Pattern */}
+      <div style={styles.backgroundPattern}></div>
+
+      <div style={styles.gameContent}>
+        <h1 style={{ ...styles.mainTitle, fontFamily: pixelFont }}>YOUR POKEMON STARTER!</h1>
+
+        {/* Console Frame */}
+        <div style={styles.windowFrame}>
+            
+            {/* Header Bar */}
+            <div style={styles.windowHeader}>
+                <div style={styles.windowDots}>
+                    <span style={styles.dot}></span>
+                    <span style={styles.dot}></span>
+                </div>
+                <span style={styles.headerTitle}>STARTER LAB</span>
+            </div>
+
+            {/* Inner Content Body */}
+            <div style={styles.windowBody}>
+                
+                <div style={styles.dialogueBox}>
+                    <p style={{lineHeight: '1.6', fontSize: '10px', margin: 0}}>
+                        "Ah! This Pokémon seems to have chosen you. Your bond is destiny!"
+                    </p>
+                </div>
+
+                <div style={styles.displayArea}>
+                    {loading ? (
+                        <div style={styles.loadingState}>
+                            <h2 style={{animation: 'blink 1s infinite', fontSize: '12px'}}>SCANNING BALL...</h2>
+                            <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
+                        </div>
+                    ) : currentPokemon ? (
+                        <div style={{
+                            ...styles.pokemonCard,
+                            ...(rolling ? styles.rollingAnim : {})
+                        }}>
+                            <div style={styles.grassContainer}>
+                                <img 
+                                    src={currentPokemon.sprites.front_default} 
+                                    alt={capitalize(currentPokemon.name)}
+                                    style={styles.pokemonSprite}
+                                />
+                            </div>
+                            
+                            <h2 style={styles.pokemonName}>
+                                {capitalize(currentPokemon.name).toUpperCase()}
+                            </h2>
+                            
+                            <div style={styles.types}>
+                                {currentPokemon.types.map(type => (
+                                    <span key={type} style={getTypeStyle(type)}>
+                                        {type}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+
+                <div style={styles.controls}>      
+                    <button 
+                        onClick={choosePokemon} 
+                        disabled={!currentPokemon || loading}
+                        style={styles.chooseButton}
+                    >
+                        {loading ? 'SAVING...' : 'I CHOOSE YOU!'}
+                    </button>
+                </div>
+
+            </div>
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
+  // 1. Container
   container: {
     minHeight: '100vh',
-    padding: '40px 20px',
-    color: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#202020',
+  },
+  backgroundPattern: {
+    position: 'absolute',
+    top: 0, left: 0, width: '100%', height: '100%',
+    opacity: 0.1,
+    backgroundImage: `
+        linear-gradient(45deg, #000 25%, transparent 25%),
+        linear-gradient(-45deg, #000 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #000 75%),
+        linear-gradient(-45deg, transparent 75%, #000 75%)
+    `,
+    backgroundSize: '20px 20px',
+    zIndex: 0,
+  },
+  gameContent: {
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    padding: '20px',
+  },
+  mainTitle: {
+    color: '#ffde00',
+    fontSize: '40px',
+    margin: '0 0 20px 0',
     textAlign: 'center',
-    maxWidth: '600px',
-    margin: '0 auto',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    textShadow: '4px 4px 0 #3b4cca, -2px -2px 0 #2a3a9a',
+    letterSpacing: '4px',
   },
-  title: {
-    marginBottom: '10px',
-    fontSize: '2.5em',
+
+  // 2. Window Frame
+  windowFrame: {
+    background: '#f8f8f8',
+    border: '4px solid #000',
+    width: '100%',
+    maxWidth: '500px',
+    position: 'relative',
+    boxShadow: '10px 10px 0px rgba(0,0,0,0.5)',
   },
-  subtitle: {
-    marginBottom: '40px',
-    fontSize: '1.2em',
-    opacity: 0.9,
+  windowHeader: {
+    background: '#3b4cca',
+    borderBottom: '4px solid #000',
+    padding: '8px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    color: 'white',
   },
-  pokemonDisplay: {
-    background: 'rgba(255,255,255,0.1)',
-    borderRadius: '20px',
+  windowDots: { display: 'flex', gap: '4px' },
+  dot: { width: '8px', height: '8px', background: 'white', border: '2px solid #000', display: 'block' },
+  headerTitle: { fontSize: '10px', letterSpacing: '1px' },
+  
+  windowBody: {
+    padding: '30px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+
+  // Content
+  dialogueBox: {
+    background: '#fff',
+    border: '4px double #000',
+    padding: '15px',
+    width: '100%',
+    boxSizing: 'border-box',
+    marginBottom: '20px',
+    boxShadow: '4px 4px 0 rgba(0,0,0,0.1)',
+  },
+  displayArea: {
+    width: '100%',
+    minHeight: '250px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: '20px',
+  },
+  loadingState: {
     padding: '40px',
-    marginBottom: '40px',
-    backdropFilter: 'blur(10px)',
-    border: '2px solid rgba(255,255,255,0.2)',
-    transition: 'all 0.3s ease',
+    textAlign: 'center',
+    color: '#555',
   },
-  rolling: {
-    opacity: 0.7,
-    transform: 'scale(0.95)',
-  },
+  
+  // Pokemon Card
   pokemonCard: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '20px',
+    animation: 'fadeIn 0.5s ease',
+  },
+  rollingAnim: {
+    opacity: 0.5,
+    transform: 'scale(0.95)',
+    filter: 'blur(2px)',
+  },
+  grassContainer: {
+    width: '180px',
+    height: '180px',
+    backgroundColor: '#77C959',
+    borderRadius: '50%',
+    border: '4px solid #000',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: '15px',
+    boxShadow: '0 6px 0 rgba(0,0,0,0.2)',
+    overflow: 'hidden'
   },
   pokemonSprite: {
-    width: '200px',
-    height: '200px',
+    width: '140px',
+    height: '140px',
     imageRendering: 'pixelated',
   },
   pokemonName: {
-    fontSize: '2em',
+    fontSize: '18px',
     textTransform: 'capitalize',
+    color: '#000',
+    margin: '10px 0',
+    textShadow: '2px 2px 0 #fff'
   },
   types: {
     display: 'flex',
-    gap: '10px',
+    gap: '5px',
     justifyContent: 'center',
   },
+
+  // Controls
   controls: {
+    width: '100%',
     display: 'flex',
-    gap: '20px',
     justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  rollButton: {
-    padding: '15px 30px',
-    fontSize: '1.1em',
-    background: '#ffcb05',
-    color: '#2a75bb',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    minWidth: '200px',
   },
   chooseButton: {
+    background: '#ffcb05',
+    color: '#000',
+    border: '3px solid #000',
     padding: '15px 30px',
-    fontSize: '1.1em',
-    background: '#2a75bb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
+    fontSize: '12px',
     cursor: 'pointer',
-    minWidth: '200px',
-  },
-  loading: {
-    fontSize: '1.5em',
-    padding: '40px',
+    fontFamily: "'Press Start 2P', monospace",
+    boxShadow: '4px 4px 0 #000',
+    textTransform: 'uppercase',
+    transition: 'transform 0.1s',
   }
 };
 

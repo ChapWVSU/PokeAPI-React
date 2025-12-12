@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import BattleSimulator from './pages/BattleSimulator';
 import Leaderboards from './pages/Leaderboards';
 import BattleHistory from './pages/BattleHistory';
+import PaidGacha from './pages/PaidGacha';
 import './App.css';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/battle" element={<ProtectedRoute><BattleSimulator /></ProtectedRoute>} />
             <Route path="/leaderboards" element={<ProtectedRoute><Leaderboards /></ProtectedRoute>} />
             <Route path="/battle-history" element={<ProtectedRoute><BattleHistory /></ProtectedRoute>} />
+            <Route path="/paid-gacha" element={<ProtectedRoute><PaidGacha /></ProtectedRoute>} />
           </Routes>
         </div>
       </Router>

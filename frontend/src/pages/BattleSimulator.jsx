@@ -1,25 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { pokemonAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import capitalize from '../utils/capitalize';
 import Navbar from '../components/Navbar';
 
 function BattleSimulator() {
   const [userPokemon, setUserPokemon] = useState(null);
   const [opponentPokemon, setOpponentPokemon] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
-  const [battleState, setBattleState] = useState('idle'); // idle, battling, won, lost, ran
+  const [battleState, setBattleState] = useState('idle'); 
   const [showRewards, setShowRewards] = useState(false);
   const [rewards, setRewards] = useState(null);
   const [userStats, setUserStats] = useState(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const { user } = useAuth();
 
-  // Battle stats
   const [battleStats, setBattleStats] = useState({
     turns: 0,
     damageTaken: 0,
     damageDealt: 0
   });
+
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => document.head.removeChild(link);
+  }, []);
 
   useEffect(() => {
     loadUserStats();
@@ -40,18 +48,16 @@ function BattleSimulator() {
       setBattleLog([]);
       setBattleStats({ turns: 0, damageTaken: 0, damageDealt: 0 });
       
-      const [userPoke, opponentPoke] = await Promise.all([
-        pokemonAPI.getUserStarter(),
-        pokemonAPI.getRandomOpponent()
-      ]);
+      const userPoke = await pokemonAPI.getUserStarter();
+      const opponentPoke = await pokemonAPI.getRandomOpponent(userPoke.level);
 
       setUserPokemon({ ...userPoke, currentHp: userPoke.maxHp });
       setOpponentPokemon({ ...opponentPoke, currentHp: opponentPoke.maxHp });
       setBattleState('battling');
       
-      addToBattleLog(`A wild ${opponentPoke.name} appeared!`, 'system');
-      addToBattleLog(`Go! ${userPoke.name}!`, 'system');
-      addToBattleLog(`${userPoke.name} is level ${userPoke.level} (${userPoke.experience}/${userPoke.expForNextLevel} EXP)`, 'info');
+      addToBattleLog(`A wild ${capitalize(opponentPoke.name)} appeared!`, 'system');
+      addToBattleLog(`Go! ${capitalize(userPoke.name)}!`, 'system');
+      addToBattleLog(`${capitalize(userPoke.name)} is level ${userPoke.level}`, 'info');
     } catch (error) {
       console.error('Failed to start battle:', error);
       setBattleState('idle');
@@ -63,31 +69,27 @@ function BattleSimulator() {
   };
 
   const calculateDamage = (attacker, defender, move) => {
-    // Simple damage calculation
     const baseDamage = move.power || 40;
-    const randomFactor = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+    const randomFactor = 0.8 + Math.random() * 0.4;
     const levelFactor = attacker.level / 50;
     
     let damage = Math.floor(baseDamage * randomFactor * levelFactor);
     
-    // STAB (Same Type Attack Bonus) - 1.5x if move type matches Pokemon type
     const hasSTAB = attacker.types.includes(move.type);
     if (hasSTAB) {
       damage = Math.floor(damage * 1.5);
       addToBattleLog(`STAB boost!`, 'info');
     }
     
-    // Critical hit chance (10%)
     const isCritical = Math.random() < 0.1;
     if (isCritical) {
       damage = Math.floor(damage * 1.5);
       addToBattleLog(`Critical hit!`, 'critical');
     }
 
-    // Accuracy check
     const accuracyCheck = move.accuracy ? (Math.random() * 100) <= move.accuracy : true;
     if (!accuracyCheck) {
-      addToBattleLog(`${attacker.name}'s attack missed!`, 'miss');
+      addToBattleLog(`${capitalize(attacker.name)}'s attack missed!`, 'miss');
       return 0;
     }
     
@@ -111,10 +113,9 @@ function BattleSimulator() {
         damageTaken: prev.damageTaken + damage
       }));
 
-      addToBattleLog(`${opponentPokemon.name} used ${randomMove.name.replace('-', ' ')}!`, 'opponent');
-      addToBattleLog(`${userPokemon.name} took ${damage} damage!`, 'damage');
+      addToBattleLog(`${capitalize(opponentPokemon.name)} used ${randomMove.name.replace('-', ' ')}!`, 'opponent');
+      addToBattleLog(`${capitalize(userPokemon.name)} took ${damage} damage!`, 'damage');
 
-      // Check if user Pokemon fainted
       setTimeout(() => {
         if (userPokemon.currentHp - damage <= 0) {
           endBattle('lost');
@@ -128,7 +129,6 @@ function BattleSimulator() {
 
     setBattleStats(prev => ({ ...prev, turns: prev.turns + 1 }));
 
-    // User attacks
     const damage = calculateDamage(userPokemon, opponentPokemon, move);
     
     if (damage > 0) {
@@ -142,19 +142,16 @@ function BattleSimulator() {
         damageDealt: prev.damageDealt + damage
       }));
 
-      addToBattleLog(`${userPokemon.name} used ${move.name.replace('-', ' ')}!`, 'user');
-      addToBattleLog(`${opponentPokemon.name} took ${damage} damage!`, 'damage');
+      addToBattleLog(`${capitalize(userPokemon.name)} used ${move.name.replace('-', ' ')}!`, 'user');
+      addToBattleLog(`${capitalize(opponentPokemon.name)} took ${damage} damage!`, 'damage');
 
-      // Check if opponent fainted
       if (opponentPokemon.currentHp - damage <= 0) {
         setTimeout(() => endBattle('win'), 1000);
         return;
       }
 
-      // Opponent attacks back
       setTimeout(() => opponentAttack(), 1500);
     } else {
-      // Attack missed, opponent still attacks
       setTimeout(() => opponentAttack(), 1500);
     }
   };
@@ -163,9 +160,8 @@ function BattleSimulator() {
     setBattleState(result);
     
     if (result === 'win') {
-      addToBattleLog(`You defeated ${opponentPokemon.name}!`, 'victory');
+      addToBattleLog(`You defeated ${capitalize(opponentPokemon.name)}!`, 'victory');
       
-      // Calculate and show rewards
       const battleData = {
         result: 'win',
         opponentLevel: opponentPokemon.level,
@@ -178,7 +174,6 @@ function BattleSimulator() {
         const rewardData = await pokemonAPI.submitBattleResult(battleData);
         setRewards(rewardData);
         
-        // Update user Pokemon with new level/exp
         if (rewardData.newLevel && rewardData.newExperience !== undefined) {
           setUserPokemon(prev => ({
             ...prev,
@@ -190,20 +185,19 @@ function BattleSimulator() {
           }));
         }
         
-        // Show level up popup if levels were gained
         if (rewardData.levelsGained > 0) {
           setShowLevelUp(true);
         } else {
           setShowRewards(true);
         }
         
-        loadUserStats(); // Refresh stats
+        loadUserStats();
       } catch (error) {
         console.error('Failed to submit battle result:', error);
       }
       
     } else if (result === 'lost') {
-      addToBattleLog(`Your ${userPokemon.name} fainted!`, 'defeat');
+      addToBattleLog(`Your ${capitalize(userPokemon.name)} fainted!`, 'defeat');
       const battleData = {
         result: 'lost',
         opponentLevel: opponentPokemon.level,
@@ -222,7 +216,6 @@ function BattleSimulator() {
       }
     } else if (result === 'ran') {
       addToBattleLog('Got away safely!', 'system');
-      setBattleState('ran');
     }
   };
 
@@ -233,73 +226,57 @@ function BattleSimulator() {
 
   const getHpBarColor = (current, max) => {
     const percentage = (current / max) * 100;
-    if (percentage > 60) return '#2ecc71';
-    if (percentage > 30) return '#f39c12';
-    return '#e74c3c';
+    if (percentage > 60) return '#4dad5b'; 
+    if (percentage > 30) return '#f39c12'; 
+    return '#d30a40'; 
   };
 
   const getExpBarColor = (current, max) => {
-    const percentage = (current / max) * 100;
-    if (percentage > 70) return '#9b59b6';
-    if (percentage > 40) return '#3498db';
-    return '#1abc9c';
+    return '#3b4cca'; 
+  };
+
+  const typeColors = {
+    normal: '#A8A878', fire: '#F08030', water: '#6890F0', grass: '#78C850',
+    electric: '#F8D030', ice: '#98D8D8', fighting: '#C03028', poison: '#A040A0',
+    ground: '#E0C068', flying: '#A890F0', psychic: '#F85888', bug: '#A8B820',
+    rock: '#B8A038', ghost: '#705898', dark: '#705848', dragon: '#7038F8',
+    steel: '#B8B8D0', fairy: '#EE99AC'
   };
 
   const getTypeStyle = (type) => ({
-    padding: '3px 8px',
-    borderRadius: '12px',
+    padding: '2px 6px',
+    border: '1px solid rgba(0,0,0,0.2)',
     color: 'white',
-    fontWeight: 'bold',
     textTransform: 'uppercase',
-    fontSize: '0.7em',
-    background: typeColors[type] || '#A8A878'
+    fontSize: '8px',
+    background: typeColors[type] || '#A8A878',
+    textShadow: '1px 1px 0 #000',
+    display: 'inline-block',
+    marginRight: '4px'
   });
-
-  const typeColors = {
-    normal: '#A8A878',
-    fire: '#F08030',
-    water: '#6890F0',
-    grass: '#78C850',
-    electric: '#F8D030',
-    ice: '#98D8D8',
-    fighting: '#C03028',
-    poison: '#A040A0',
-    ground: '#E0C068',
-    flying: '#A890F0',
-    psychic: '#F85888',
-    bug: '#A8B820',
-    rock: '#B8A038',
-    ghost: '#705898',
-    dark: '#705848',
-    dragon: '#7038F8',
-    steel: '#B8B8D0',
-    fairy: '#EE99AC'
-  };
 
   const HpBar = ({ current, max, label }) => (
     <div style={styles.hpContainer}>
       <div style={styles.hpInfo}>
-        <span>{label}</span>
-        <span>{current} / {max} HP</span>
+        <span>HP</span>
       </div>
-      <div style={styles.hpBarBackground}>
-        <div 
-          style={{
-            ...styles.hpBarFill,
-            width: `${(current / max) * 100}%`,
-            background: getHpBarColor(current, max)
-          }}
-        />
+      <div style={styles.hpBarWrapper}>
+        <div style={styles.hpBarBackground}>
+            <div 
+            style={{
+                ...styles.hpBarFill,
+                width: `${(current / max) * 100}%`,
+                background: getHpBarColor(current, max)
+            }}
+            />
+        </div>
+        <div style={styles.hpText}>{current}/{max}</div>
       </div>
     </div>
   );
 
-  const ExpBar = ({ current, max, level }) => (
+  const ExpBar = ({ current, max }) => (
     <div style={styles.expContainer}>
-      <div style={styles.expInfo}>
-        <span>Lv. {level}</span>
-        <span>{current} / {max} EXP</span>
-      </div>
       <div style={styles.expBarBackground}>
         <div 
           style={{
@@ -312,244 +289,183 @@ function BattleSimulator() {
     </div>
   );
 
+  const pixelFont = "'Press Start 2P', monospace";
+
   return (
-    <div style={styles.pageContainer}>
-      <Navbar />
+    <div style={{ ...styles.container, fontFamily: pixelFont }}>
       
-      <div style={styles.container}>
-        {/* User Stats */}
-        {userStats && (
-          <div style={styles.statsBar}>
-            <div style={styles.statItem}>
-              <span style={styles.statLabel}>🏆 Trophies:</span>
-              <span style={styles.statValue}>{userStats.trophies}</span>
-            </div>
-            <div style={styles.statItem}>
-              <span style={styles.statLabel}>🪙 Coins:</span>
-              <span style={styles.statValue}>{userStats.coins}</span>
-            </div>
-            <div style={styles.statItem}>
-              <span style={styles.statLabel}>⚔️ Battles:</span>
-              <span style={styles.statValue}>{userStats.totalBattles} ({userStats.wins}W)</span>
-            </div>
-          </div>
-        )}
+      <div style={styles.backgroundPattern}></div>
 
-        {/* Battle Arena */}
-        <div style={styles.battleArena}>
-          {battleState === 'idle' && (
-            <div style={styles.idleState}>
-              <h1>Battle Simulator</h1>
-              <p>Test your skills against random Pokemon!</p>
-              <button onClick={startBattle} style={styles.startButton}>
-                Start Battle
-              </button>
-            </div>
-          )}
+      <div style={{zIndex: 10, width: '100%'}}>
+        <Navbar />
+      </div>
 
-          {battleState === 'loading' && (
-            <div style={styles.loadingState}>
-              <div style={styles.loadingSpinner}></div>
-              <p>Looking for opponent...</p>
-            </div>
-          )}
+      <div style={styles.gameContent}>
+        <h1 style={{ ...styles.mainTitle, fontFamily: pixelFont }}>BATTLE SIMULATOR</h1>
 
-          {(battleState === 'battling' || battleState === 'won' || battleState === 'lost') && (
-            <>
-              {/* Opponent Pokemon */}
-              <div style={styles.opponentSection}>
-                {opponentPokemon && (
-                  <>
-                    <div style={styles.pokemonInfo}>
-                      <h3>{opponentPokemon.name} Lv.{opponentPokemon.level}</h3>
-                      <div style={styles.types}>
-                        {opponentPokemon.types.map(type => (
-                          <span key={type} style={getTypeStyle(type)}>
-                            {type}
-                          </span>
-                        ))}
-                      </div>
-                      <HpBar 
-                        current={opponentPokemon.currentHp} 
-                        max={opponentPokemon.maxHp} 
-                        label="Opponent"
-                      />
-                    </div>
-                    <img 
-                      src={opponentPokemon.sprites.front_default} 
-                      alt={opponentPokemon.name}
-                      style={styles.pokemonSprite}
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* Battle Log */}
-              <div style={styles.battleLog}>
-                <h4>Battle Log</h4>
-                <div style={styles.logContent}>
-                  {battleLog.slice(-6).map((log, index) => (
-                    <div 
-                      key={index} 
-                      style={{
-                        ...styles.logEntry,
-                        ...styles[log.type]
-                      }}
-                    >
-                      {log.message}
-                    </div>
-                  ))}
+        <div style={styles.windowFrame}>
+            <div style={styles.windowHeader}>
+                <div style={styles.windowDots}>
+                    <span style={styles.dot}></span>
+                    <span style={styles.dot}></span>
                 </div>
-              </div>
+                <span style={styles.headerTitle}></span>
+            </div>
 
-              {/* User Pokemon */}
-              <div style={styles.userSection}>
-                {userPokemon && (
-                  <>
-                    <img 
-                      src={userPokemon.sprites.front_default} 
-                      alt={userPokemon.name}
-                      style={styles.pokemonSprite}
-                    />
-                    <div style={styles.pokemonInfo}>
-                      <h3>{userPokemon.name}</h3>
-                      <ExpBar 
-                        current={userPokemon.experience} 
-                        max={userPokemon.expForNextLevel} 
-                        level={userPokemon.level}
-                      />
-                      <div style={styles.types}>
-                        {userPokemon.types.map(type => (
-                          <span key={type} style={getTypeStyle(type)}>
-                            {type}
-                          </span>
-                        ))}
-                      </div>
-                      <HpBar 
-                        current={userPokemon.currentHp} 
-                        max={userPokemon.maxHp} 
-                        label="Your Pokemon"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Battle Controls */}
-              {battleState === 'battling' && (
-                <div style={styles.controls}>
-                  <h4>Choose Your Move:</h4>
-                  <div style={styles.movesGrid}>
-                    {userPokemon?.moves.map((move, index) => (
-                      <button
-                        key={index}
-                        onClick={() => userAttack(move)}
-                        style={{
-                          ...styles.moveButton,
-                          background: typeColors[move.type] || '#3498db'
-                        }}
-                      >
-                        <span style={styles.moveName}>
-                          {move.name.replace('-', ' ')}
-                        </span>
-                        <div style={styles.moveDetails}>
-                          <span style={styles.movePower}>Power: {move.power}</span>
-                          <span style={styles.moveAccuracy}>Acc: {move.accuracy}%</span>
-                        </div>
-                        <span style={styles.moveType}>{move.type}</span>
+            <div style={styles.windowBody}>
+                
+                <div style={styles.battleArena}>
+                  
+                  {battleState === 'idle' && (
+                    <div style={styles.idleState}>
+                      <div style={styles.menuHeader}> MAIN MENU </div>
+                      <p style={{marginBottom: '20px', fontSize: '10px', lineHeight: '1.5'}}>
+                        TRAIN YOUR POKEMON AGAINST WILD ENCOUNTERS!
+                      </p>
+                      <button onClick={startBattle} style={styles.startButton}>
+                        START BATTLE
                       </button>
-                    ))}
-                  </div>
-                  <button 
-                    onClick={runFromBattle}
-                    style={styles.runButton}
-                  >
-                    🏃 Run
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+                    </div>
+                  )}
 
-          {/* Level Up Popup */}
-          {showLevelUp && rewards && (
-            <div style={styles.rewardsOverlay}>
-              <div style={styles.levelUpPopup}>
-                <h2 style={styles.levelUpTitle}>🎉 Level Up! 🎉</h2>
-                <div style={styles.levelUpContent}>
-                  <div style={styles.levelUpMessage}>
-                    <strong>{userPokemon?.name}</strong> grew to <strong>Level {rewards.newLevel}!</strong>
-                  </div>
-                  {rewards.levelsGained > 1 && (
-                    <div style={styles.multiLevel}>
-                      (+{rewards.levelsGained} levels!)
+                  {battleState === 'loading' && (
+                    <div style={styles.loadingState}>
+                      <h2 style={{animation: 'blink 1s infinite'}}>SEARCHING...</h2>
+                      <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
                     </div>
                   )}
-                  <div style={styles.levelUpStats}>
-                    <div>+{rewards.expGained} EXP</div>
-                    <div>Max HP increased!</div>
-                    <div>Moves got stronger!</div>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => {
-                    setShowLevelUp(false);
-                    setShowRewards(true);
-                  }}
-                  style={styles.continueButton}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          )}
 
-          {/* Rewards Popup */}
-          {showRewards && rewards && (
-            <div style={styles.rewardsOverlay}>
-              <div style={styles.rewardsPopup}>
-                <h2>Battle Results</h2>
-                <div style={styles.rewardsContent}>
-                  {rewards.expGained > 0 && (
-                    <div style={styles.rewardItem}>
-                      <span style={styles.rewardIcon}>⭐</span>
-                      <span style={styles.rewardText}>
-                        +{rewards.expGained} EXP
-                      </span>
+                  {(battleState === 'battling' || battleState === 'won' || battleState === 'lost' || battleState === 'ran') && (
+                    <div style={styles.battleScene}>
+                      
+                      <div style={styles.opponentArea}>
+                        <div style={styles.statusBox}>
+                            <div style={styles.nameRow}>
+                                <span>{opponentPokemon?.name.toUpperCase()}</span>
+                                <span>Lv{opponentPokemon?.level}</span>
+                            </div>
+                            <HpBar current={opponentPokemon?.currentHp} max={opponentPokemon?.maxHp} label="" />
+                        </div>
+                        <div style={styles.opponentSpriteBox}>
+                            <img 
+                                src={opponentPokemon?.sprites?.front_default} 
+                                alt="Opponent"
+                                style={styles.opponentSprite}
+                            />
+                            <div style={styles.platform}></div>
+                        </div>
+                      </div>
+
+                      <div style={styles.userArea}>
+                        <div style={styles.userSpriteBox}>
+                            <img 
+                                src={userPokemon?.sprites?.back_default} 
+                                alt="User"
+                                style={styles.userSprite}
+                            />
+                            <div style={styles.platform}></div>
+                        </div>
+                        <div style={styles.statusBox}>
+                            <div style={styles.nameRow}>
+                                <span>{userPokemon?.name.toUpperCase()}</span>
+                                <span>Lv{userPokemon?.level}</span>
+                            </div>
+                            <HpBar current={userPokemon?.currentHp} max={userPokemon?.maxHp} label="" />
+                            <div style={styles.expRow}>
+                                <span style={{fontSize: '8px', marginRight: '5px'}}>EXP</span>
+                                <ExpBar current={userPokemon?.experience} max={userPokemon?.expForNextLevel} />
+                            </div>
+                        </div>
+                      </div>
+
+                      <div style={styles.bottomSection}>
+                          <div style={styles.dialogueBox}>
+                            {battleLog.slice(-1).map((log, index) => (
+                                <div key={index} style={styles.logText}>
+                                    {log.message}
+                                    <span style={styles.blinkingCursor}>▼</span>
+                                </div>
+                            ))}
+                          </div>
+
+                          {battleState === 'battling' && (
+                            <div style={styles.moveMenu}>
+                                {userPokemon?.moves.map((move, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => userAttack(move)}
+                                        style={styles.moveButton}
+                                    >
+                                        {move.name.toUpperCase()}
+                                        <div style={styles.ppText}>{move.type}</div>
+                                    </button>
+                                ))}
+                                <button onClick={runFromBattle} style={{...styles.moveButton, background: '#e74c3c', color: 'white'}}>
+                                    RUN
+                                </button>
+                            </div>
+                          )}
+                      </div>
+
                     </div>
                   )}
-                  <div style={styles.rewardItem}>
-                    <span style={styles.rewardIcon}>🏆</span>
-                    <span style={styles.rewardText}>
-                      +{rewards.trophiesEarned} Trophies
-                    </span>
-                  </div>
-                  <div style={styles.rewardItem}>
-                    <span style={styles.rewardIcon}>🪙</span>
-                    <span style={styles.rewardText}>
-                      +{rewards.coinsEarned} Coins
-                    </span>
-                  </div>
-                  {rewards.bonusMultiplier > 1 && (
-                    <div style={styles.bonusInfo}>
-                      <span style={styles.bonusText}>
-                        Bonus Multiplier: {rewards.bonusMultiplier}x
-                      </span>
+
+                  {showLevelUp && rewards && (
+                    <div style={styles.popupOverlay}>
+                      <div style={styles.popupBox}>
+                        <div style={styles.popupHeader}>LEVEL UP!</div>
+                        <div style={styles.popupContent}>
+                            <p>{userPokemon?.name.toUpperCase()} grew to</p>
+                            <p style={{fontSize: '14px', marginTop: '10px'}}>LV. {rewards.newLevel}!</p>
+                        </div>
+                        <button 
+                          onClick={() => { setShowLevelUp(false); setShowRewards(true); }}
+                          style={styles.continueButton}
+                        >
+                          NEXT ➤
+                        </button>
+                      </div>
                     </div>
                   )}
+
+                  {showRewards && rewards && (
+                    <div style={styles.popupOverlay}>
+                      <div style={styles.popupBox}>
+                        <div style={styles.popupHeader}>RESULTS</div>
+                        <div style={styles.popupContent}>
+                            {rewards.expGained > 0 && <p>EXP: +{rewards.expGained}</p>}
+                            <p>TROPHIES: +{rewards.trophiesEarned}</p>
+                            <p>COINS: +{rewards.coinsEarned}</p>
+                        </div>
+                        <button 
+                          onClick={() => { setShowRewards(false); setBattleState('idle'); }}
+                          style={styles.continueButton}
+                        >
+                          FINISH ➤
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {battleState === 'ran' && (
+                    <div style={styles.popupOverlay}>
+                      <div style={styles.popupBox}>
+                        <div style={styles.popupHeader}>ESCAPED</div>
+                        <div style={styles.popupContent}>
+                            <p>GOT AWAY SAFELY!</p>
+                        </div>
+                        <button 
+                          onClick={() => setBattleState('idle')}
+                          style={styles.continueButton}
+                        >
+                          RETURN ➤
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
-                <button 
-                  onClick={() => {
-                    setShowRewards(false);
-                    setBattleState('idle');
-                  }}
-                  style={styles.continueButton}
-                >
-                  Continue
-                </button>
-              </div>
             </div>
-          )}
         </div>
       </div>
     </div>
@@ -557,319 +473,162 @@ function BattleSimulator() {
 }
 
 const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  },
   container: {
-    padding: '20px',
-    paddingTop: '80px', // Add padding to account for navbar
-  },
-  statsBar: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '30px',
-    marginBottom: '30px',
-    background: 'rgba(255,255,255,0.1)',
-    padding: '15px',
-    borderRadius: '10px',
-    backdropFilter: 'blur(10px)',
-  },
-  statItem: {
+    minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    color: 'white',
-  },
-  statLabel: {
-    fontSize: '0.9em',
-    opacity: 0.8,
-    marginBottom: '5px',
-  },
-  statValue: {
-    fontSize: '1.2em',
-    fontWeight: 'bold',
-  },
-  battleArena: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    background: 'rgba(255,255,255,0.1)',
-    borderRadius: '20px',
-    padding: '30px',
-    backdropFilter: 'blur(10px)',
-    border: '2px solid rgba(255,255,255,0.2)',
-  },
-  idleState: {
-    textAlign: 'center',
-    color: 'white',
-  },
-  startButton: {
-    background: '#e74c3c',
-    color: 'white',
-    border: 'none',
-    padding: '15px 30px',
-    fontSize: '1.2em',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    marginTop: '20px',
-  },
-  loadingState: {
-    textAlign: 'center',
-    color: 'white',
-  },
-  loadingSpinner: {
-    border: '4px solid rgba(255,255,255,0.3)',
-    borderTop: '4px solid white',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    animation: 'spin 1s linear infinite',
-    margin: '0 auto 20px',
-  },
-  opponentSection: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '30px',
-  },
-  userSection: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '30px',
-  },
-  pokemonInfo: {
-    color: 'white',
-    flex: 1,
-  },
-  types: {
-    display: 'flex',
-    gap: '5px',
-    marginBottom: '10px',
-  },
-  pokemonSprite: {
-    width: '150px',
-    height: '150px',
-    imageRendering: 'pixelated',
-  },
-  hpContainer: {
-    marginTop: '10px',
-  },
-  expContainer: {
-    marginBottom: '10px',
-  },
-  hpInfo: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '5px',
-    fontSize: '0.9em',
-  },
-  expInfo: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '5px',
-    fontSize: '0.9em',
-  },
-  hpBarBackground: {
-    background: '#34495e',
-    borderRadius: '10px',
-    height: '10px',
-    overflow: 'hidden',
-  },
-  expBarBackground: {
-    background: '#2c3e50',
-    borderRadius: '10px',
-    height: '8px',
-    overflow: 'hidden',
-  },
-  hpBarFill: {
-    height: '100%',
-    transition: 'width 0.3s ease',
-  },
-  expBarFill: {
-    height: '100%',
-    transition: 'width 0.3s ease',
-  },
-  battleLog: {
-    background: 'rgba(0,0,0,0.3)',
-    borderRadius: '10px',
-    padding: '15px',
-    margin: '20px 0',
-    color: 'white',
-  },
-  logContent: {
-    maxHeight: '150px',
+    justifyContent: 'flex-start',
+    position: 'relative',
     overflowY: 'auto',
+    backgroundColor: '#202020',
   },
-  logEntry: {
-    padding: '5px 0',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
+  backgroundPattern: {
+    position: 'absolute',
+    top: 0, left: 0, width: '100%', height: '100%',
+    opacity: 0.1,
+    backgroundImage: `linear-gradient(45deg, #000 25%, transparent 25%), linear-gradient(-45deg, #000 25%, transparent 25%)`,
+    backgroundSize: '20px 20px',
+    zIndex: 0,
   },
-  user: {
-    color: '#3498db',
-  },
-  opponent: {
-    color: '#e74c3c',
-  },
-  damage: {
-    color: '#f39c12',
-  },
-  critical: {
-    color: '#e74c3c',
-    fontWeight: 'bold',
-  },
-  victory: {
-    color: '#2ecc71',
-    fontWeight: 'bold',
-  },
-  defeat: {
-    color: '#e74c3c',
-    fontWeight: 'bold',
-  },
-  miss: {
-    color: '#95a5a6',
-    fontStyle: 'italic',
-  },
-  info: {
-    color: '#3498db',
-    fontSize: '0.9em',
-  },
-  controls: {
-    marginTop: '30px',
-    color: 'white',
-  },
-  movesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '10px',
-    margin: '15px 0',
-  },
-  moveButton: {
-    color: 'white',
-    border: 'none',
-    padding: '15px',
-    borderRadius: '8px',
-    cursor: 'pointer',
+  gameContent: {
+    zIndex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '5px',
+    width: '100%',
+    padding: '20px',
+    marginTop: '20px',
+    marginBottom: '40px',
   },
-  moveName: {
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-    fontSize: '1.1em',
+  mainTitle: {
+    color: '#ffde00',
+    fontSize: '40px',
+    margin: '0 0 20px 0',
+    textAlign: 'center',
+    textShadow: '4px 4px 0 #3b4cca, -2px -2px 0 #2a3a9a',
+    letterSpacing: '4px',
   },
-  moveDetails: {
-    display: 'flex',
-    gap: '10px',
-    fontSize: '0.8em',
-    opacity: 0.9,
+  windowFrame: {
+    background: '#f8f8f8',
+    border: '4px solid #000',
+    width: '100%',
+    maxWidth: '1000px',
+    position: 'relative',
+    boxShadow: '10px 10px 0px rgba(0,0,0,0.5)',
   },
-  moveType: {
-    fontSize: '0.7em',
-    background: 'rgba(0,0,0,0.3)',
-    padding: '2px 8px',
-    borderRadius: '10px',
-    textTransform: 'uppercase',
-  },
-  runButton: {
-    background: 'rgba(231, 76, 60, 0.8)',
-    color: 'white',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '1em',
-    marginTop: '10px',
-  },
-  rewardsOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.8)',
+  windowHeader: {
+    background: '#3b4cca',
+    borderBottom: '4px solid #000',
+    padding: '8px 12px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-  levelUpPopup: {
-    background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)',
-    padding: '30px',
-    borderRadius: '15px',
-    textAlign: 'center',
+    justifyContent: 'space-between',
     color: 'white',
-    minWidth: '350px',
-    border: '3px solid gold',
   },
-  levelUpTitle: {
-    fontSize: '2em',
+  windowDots: { display: 'flex', gap: '4px' },
+  dot: { width: '8px', height: '8px', background: 'white', border: '2px solid #000', display: 'block' },
+  headerTitle: { fontSize: '10px', letterSpacing: '1px' },
+  windowBody: {
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  battleArena: { width: '100%', position: 'relative' },
+  idleState: { textAlign: 'center', padding: '40px', border: '2px solid #000', background: '#fff' },
+  menuHeader: { fontSize: '14px', marginBottom: '20px', borderBottom: '2px dashed #000', display: 'inline-block', paddingBottom: '5px' },
+  startButton: { background: '#ffcb05', border: '3px solid #000', padding: '15px 30px', fontSize: '12px', cursor: 'pointer', fontFamily: "'Press Start 2P', monospace", boxShadow: '4px 4px 0 #000' },
+  loadingState: { textAlign: 'center', padding: '60px' },
+  battleScene: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    padding: '20px',
+  },
+  opponentArea: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: '200px',
+    paddingBottom: '20px',
+
+  },
+  userArea: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: '220px',
     marginBottom: '20px',
-    textShadow: '2px 2px 0 rgba(0,0,0,0.3)',
   },
-  levelUpContent: {
-    margin: '20px 0',
-  },
-  levelUpMessage: {
-    fontSize: '1.3em',
-    marginBottom: '15px',
-    fontWeight: 'bold',
-  },
-  multiLevel: {
-    fontSize: '1.1em',
-    color: '#ffeb3b',
-    fontWeight: 'bold',
-    marginBottom: '15px',
-  },
-  levelUpStats: {
-    background: 'rgba(255,255,255,0.2)',
-    padding: '15px',
-    borderRadius: '10px',
-    fontSize: '1em',
-  },
-  rewardsPopup: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '30px',
-    borderRadius: '15px',
-    textAlign: 'center',
-    color: 'white',
-    minWidth: '300px',
-  },
-  rewardsContent: {
-    margin: '20px 0',
-  },
-  rewardItem: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    margin: '10px 0',
-    fontSize: '1.2em',
-  },
-  rewardIcon: {
-    fontSize: '1.5em',
-  },
-  bonusInfo: {
-    marginTop: '15px',
+  statusBox: {
+    background: '#fff',
+    border: '3px solid #000',
     padding: '10px',
-    background: 'rgba(255,255,255,0.2)',
-    borderRadius: '5px',
+    width: '200px',
+    position: 'relative',
+    boxShadow: '4px 4px 0 rgba(0,0,0,0.1)',
+    zIndex: 10,
   },
-  bonusText: {
-    color: '#ffeb3b',
-    fontWeight: 'bold',
+  nameRow: { display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold' },
+  hpContainer: { display: 'flex', alignItems: 'center', background: '#333', padding: '2px', borderRadius: '2px' },
+  hpInfo: { color: '#ffde00', fontSize: '8px', padding: '0 4px', background: '#333' },
+  hpBarWrapper: { flex: 1, background: '#fff', height: '8px', border: '1px solid #fff', position: 'relative' },
+  hpBarBackground: { width: '100%', height: '100%', background: '#555' },
+  hpBarFill: { height: '100%', transition: 'width 0.5s ease' },
+  hpText: { fontSize: '6px', textAlign: 'right', marginTop: '2px', color: '#000' },
+  opponentSpriteBox: { position: 'relative', marginRight: '30px' },
+  userSpriteBox: { position: 'relative', marginLeft: '30px' },
+  opponentSprite: {
+    width: '250px',
+    height: '250px',
+    imageRendering: 'pixelated',
+    zIndex: 2,
+    position: 'relative',
   },
-  continueButton: {
-    background: '#2ecc71',
-    color: 'white',
-    border: 'none',
-    padding: '12px 30px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '1em',
-  }
+  userSprite: {
+    width: '280px',
+    height: '280px',
+    imageRendering: 'pixelated',
+    zIndex: 2,
+    position: 'relative',
+  },
+  platform: {
+    width: '300px',
+    height: '60px',
+    background: '#e0e0e0',
+    border: '2px solid #ccc',
+    borderRadius: '50%',
+    position: 'absolute',
+    bottom: '10px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 1,
+  },
+  expRow: { display: 'flex', alignItems: 'center', marginTop: '5px' },
+  expContainer: { flex: 1, height: '4px', background: '#555', border: '1px solid #000' },
+  expBarFill: { height: '100%', background: '#3b4cca' },
+  bottomSection: {
+    display: 'flex',
+    gap: '15px',
+    height: '140px',
+    border: '4px solid #3b4cca',
+    background: '#222',
+    padding: '10px',
+    zIndex: 20,
+    position: 'relative'
+  },
+  dialogueBox: { flex: 2, background: '#fff', border: '3px solid #fff', borderRadius: '4px', padding: '15px', fontSize: '10px', lineHeight: '1.8', color: '#000', position: 'relative' },
+  logText: { position: 'relative' },
+  blinkingCursor: { color: '#d30a40', animation: 'blink 1s infinite', marginLeft: '5px' },
+  moveMenu: { flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', background: '#fff', border: '3px solid #fff', padding: '5px' },
+  moveButton: { background: '#f8f8f8', border: '2px solid #000', fontSize: '8px', fontFamily: "'Press Start 2P', monospace", cursor: 'pointer', textAlign: 'left', padding: '5px', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+  ppText: { fontSize: '6px', color: '#666', marginTop: '2px' },
+  popupOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
+  popupBox: { background: '#fff', border: '4px solid #000', padding: '20px', textAlign: 'center', minWidth: '200px', boxShadow: '8px 8px 0 rgba(0,0,0,0.5)' },
+  popupHeader: { background: '#ffcb05', padding: '5px', fontSize: '12px', border: '2px solid #000', marginBottom: '15px' },
+  popupContent: { fontSize: '10px', lineHeight: '2', marginBottom: '15px' },
+  continueButton: { background: 'transparent', border: 'none', fontSize: '10px', fontFamily: "'Press Start 2P', monospace", cursor: 'pointer', color: '#d30a40', animation: 'blink 1s infinite' }
 };
 
 export default BattleSimulator;

@@ -1,8 +1,8 @@
-// ...existing code...
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { pokemonAPI } from '../services/api';
 import Navbar from '../components/Navbar';
+import capitalize from '../utils/capitalize';
 
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -10,28 +10,33 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
 
+  // 1. Inject Pixel Font
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => document.head.removeChild(link);
+  }, []);
+
   useEffect(() => {
     loadDashboardData();
     loadUserStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboardData = () => {
-    if (!pokemonAPI?.getDashboardData) {
-      setLoading(false);
-      return;
-    }
     pokemonAPI.getDashboardData()
       .then(data => {
         setDashboardData(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setLoading(false);
+      });
   };
 
   const loadUserStats = async () => {
     try {
-      if (!pokemonAPI?.getUserStats) return;
       const stats = await pokemonAPI.getUserStats();
       setUserStats(stats);
     } catch (error) {
@@ -39,10 +44,13 @@ function Dashboard() {
     }
   };
 
+  const pixelFont = "'Press Start 2P', monospace";
+
   if (loading) {
     return (
-      <div style={{ ...styles.container, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white' }}>
-        Loading...
+      <div style={{ ...styles.container, justifyContent: 'center', alignItems: 'center', color: 'white', fontFamily: pixelFont }}>
+        <h2 style={{animation: 'blink 1s infinite'}}>LOADING DATA...</h2>
+        <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
       </div>
     );
   }
@@ -56,119 +64,121 @@ function Dashboard() {
   };
 
   const getTypeStyle = (typeName) => ({
-    padding: '5px 12px',
-    borderRadius: '18px',
+    padding: '4px 8px',
+    border: '2px solid rgba(0,0,0,0.2)',
     color: 'white',
-    fontWeight: 'bold',
     textTransform: 'uppercase',
-    fontSize: '0.75em',
-    background: typeColors[typeName] || '#A8A878'
+    fontSize: '0.6em',
+    background: typeColors[typeName] || '#A8A878',
+    fontFamily: pixelFont,
+    textShadow: '1px 1px 0 #000',
+    marginRight: '4px',
+    display: 'inline-block'
   });
 
-  const trophies = userStats?.trophies || 0;
-  const trophyProgressPercent = Math.min(((trophies % 50) / 50) * 100, 100);
-
-  const starter = dashboardData?.starterPokemon || null;
-  const starterTypes = Array.isArray(starter?.types)
-    ? starter.types.map(t => (t?.type?.name ?? (typeof t === 'string' ? t : 'unknown')))
-    : [];
-
   return (
-    <div style={styles.container}>
-      <Navbar />
+    <div style={{...styles.container, fontFamily: pixelFont}}>
+      
+      {/* Background Pattern */}
+      <div style={styles.backgroundPattern}></div>
 
-      <div style={styles.content}>
-        <header style={styles.header}>
-          <h1 style={styles.title}>Welcome, Trainer {user?.username}!</h1>
-          <button onClick={logout} style={styles.logoutButton}>Logout</button>
-        </header>
+      {/* Navbar Outside Game Box */}
+      <div style={{zIndex: 10, width: '100%'}}>
+        <Navbar />
+      </div>
 
-        {userStats && (
-          <div style={styles.statsOverview}>
-            <div style={styles.statCard}>
-              <div style={styles.statIcon}>🏆</div>
-              <div style={styles.statInfo}>
-                <div style={styles.statValue}>{userStats.trophies}</div>
-                <div style={styles.statLabel}>Trophies</div>
-              </div>
-            </div>
-            <div style={styles.statCard}>
-              <div style={styles.statIcon}>🪙</div>
-              <div style={styles.statInfo}>
-                <div style={styles.statValue}>{userStats.coins}</div>
-                <div style={styles.statLabel}>Coins</div>
-              </div>
-            </div>
-            <div style={styles.statCard}>
-              <div style={styles.statIcon}>⚔️</div>
-              <div style={styles.statInfo}>
-                <div style={styles.statValue}>{userStats.wins}/{userStats.totalBattles}</div>
-                <div style={styles.statLabel}>Battles (W/L)</div>
-              </div>
-            </div>
-          </div>
-        )}
+      <div style={styles.gameContent}>
+       
 
-        <div style={styles.columns}>
-          <div style={styles.leftColumn}>
-            <div style={styles.encourageBox}>
-              <div style={styles.encourageEmoji}>✨</div>
-              <h3 style={styles.encourageTitle}>Keep it up, Trainer!</h3>
-              <p style={styles.encourageText}>
-                Every trophy brings you closer to rare rewards and higher ranks. Head to the Battle Simulator and claim your next badge!
-              </p>
-
-              <div style={styles.trophyProgress}>
-                <div style={{ ...styles.trophyBar, width: `${trophyProgressPercent}%` }} />
-              </div>
-              <div style={styles.progressLabel}>
-                {trophies} trophies — {Math.round(trophyProgressPercent)}% to next milestone
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.rightColumn}>
-            <div style={styles.quickActionsCard}>
-              <h2 style={styles.sectionTitle}>Quick Actions</h2>
-              <div style={styles.actionGrid}>
-                <a href="/battle" style={styles.actionCard}>
-                  <div style={styles.actionIcon}>⚔️</div>
-                  <div style={styles.actionText}>Battle Simulator</div>
-                </a>
-              </div>
-            </div>
-
-            {starter ? (
-              <div style={styles.starterSectionCard}>
-                <h2 style={styles.sectionTitle}>Your Starter Pokemon</h2>
-                <div style={styles.pokemonCard}>
-                  <img
-                    src={starter.sprites?.front_default || ''}
-                    alt={starter.name || 'starter'}
-                    style={styles.pokemonSprite}
-                    onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/150x150/cccccc/333333?text=${starter?.name ?? 'Pokémon'}`; }}
-                  />
-                  <h3 style={styles.pokemonName}>
-                    {starter.name ? starter.name.charAt(0).toUpperCase() + starter.name.slice(1) : 'Unknown'}
-                  </h3>
-                  <div style={styles.pokemonTypes}>
-                    {starterTypes.map(t => (
-                      <span key={t} style={getTypeStyle(t)}>{t}</span>
-                    ))}
-                  </div>
-                  <div style={styles.pokemonStats}>
-                    <div style={styles.statRow}><span>Level:</span><span>5</span></div>
-                    <div style={styles.statRow}><span>Experience:</span><span>0/100</span></div>
-                  </div>
+        {/* Console Window Frame */}
+        <div style={styles.windowFrame}>
+            
+            {/* Header Bar */}
+            <div style={styles.windowHeader}>
+                <div style={styles.windowDots}>
+                    <span style={styles.dot}></span>
+                    <span style={styles.dot}></span>
                 </div>
-              </div>
-            ) : (
-              <div style={styles.noStarterCard}>
-                <h2>Choose Your Starter</h2>
-                <button onClick={() => window.location.href = '/gacha'} style={styles.chooseButton}>Start Your Journey</button>
-              </div>
-            )}
-          </div>
+                <span style={styles.headerTitle}>TRAINER ID: {user?.username?.toUpperCase()}</span>
+            </div>
+
+            {/* Inner Content Body */}
+            <div style={styles.windowBody}>
+                
+                <div style={styles.pageHeader}>
+                  <div style={styles.welcomeText}>WELCOME BACK, TRAINER!</div>
+                </div>
+
+                {/* Stats Overview */}
+                {userStats && (
+                  <div style={styles.statsRow}>
+                    <div style={styles.statBox}>
+                      <span style={styles.statLabel}>TROPHIES</span>
+                      <span style={styles.statValue}>🏆 {userStats.trophies}</span>
+                    </div>
+                    <div style={styles.statBox}>
+                      <span style={styles.statLabel}>COINS</span>
+                      <span style={styles.statValue}>💰 {userStats.coins}</span>
+                    </div>
+                    <div style={styles.statBox}>
+                      <span style={styles.statLabel}>RECORD</span>
+                      <span style={styles.statValue}>⚔️ {userStats.wins}/{userStats.totalBattles}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pokemon Section */}
+                {dashboardData?.starterPokemon ? (
+                  <div style={styles.pokemonSection}>
+                    <div style={styles.sectionHeader}> PARTY SLOT 1 </div>
+                    
+                    <div style={styles.pokemonCard}>
+                      <div style={styles.grassContainer}>
+                        <img 
+                          src={dashboardData.starterPokemon.sprites.front_default} 
+                          alt={capitalize(dashboardData.starterPokemon.name)}
+                          style={styles.pokemonSprite}
+                        />
+                      </div>
+                      
+                      <h3 style={styles.pokemonName}>
+                        {capitalize(dashboardData.starterPokemon.name).toUpperCase()}
+                      </h3>
+                      
+                      <div style={{marginBottom: '15px'}}>
+                        {dashboardData.starterPokemon.types.map(type => (
+                          <span key={type} style={getTypeStyle(type)}>
+                            {type}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      <div style={styles.statList}>
+                        <div style={styles.statRow}>
+                          <span>LEVEL</span>
+                          <span>5</span>
+                        </div>
+                        <div style={styles.statRow}>
+                          <span>EXP</span>
+                          <span>0/100</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.noStarter}>
+                    <div style={styles.warningIcon}>!</div>
+                    <h2 style={{fontSize: '12px', marginBottom: '20px'}}>NO POKEMON FOUND</h2>
+                    <button 
+                      onClick={() => window.location.href = '/gacha'}
+                      style={styles.chooseButton}
+                    >
+                      CHOOSE STARTER
+                    </button>
+                  </div>
+                )}
+
+            </div>
         </div>
       </div>
     </div>
@@ -178,80 +188,223 @@ function Dashboard() {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #56bd56ff 0%, #083c13ff 100%)',
-  },
-  content: {
-    padding: '40px 20px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-  },
-
-  columns: {
     display: 'flex',
-    gap: '40px',
-    alignItems: 'flex-start',
-    marginBottom: '40px',
-    flexWrap: 'wrap'
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start', 
+    position: 'relative',
+    overflowY: 'auto',
+    backgroundColor: '#202020',
   },
-  leftColumn: {
-    flex: '1 1 420px',
-    minWidth: 280,
+  backgroundPattern: {
+    position: 'absolute',
+    top: 0, left: 0, width: '100%', height: '100%',
+    opacity: 0.1,
+    backgroundImage: `
+        linear-gradient(45deg, #000 25%, transparent 25%),
+        linear-gradient(-45deg, #000 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #000 75%),
+        linear-gradient(-45deg, transparent 75%, #000 75%)
+    `,
+    backgroundSize: '20px 20px',
+    zIndex: 0,
+  },
+  gameContent: {
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    padding: '20px',
+    marginTop: '20px',
+    marginBottom: '40px',
+  },
+  mainTitle: {
+    color: '#ffde00',
+    fontSize: '40px',
+    margin: '0 0 20px 0',
+    textAlign: 'center',
+    textShadow: '4px 4px 0 #3b4cca, -2px -2px 0 #2a3a9a',
+    letterSpacing: '4px',
+  },
+  
+  // Window Frame
+  windowFrame: {
+    background: '#f8f8f8',
+    border: '4px solid #000',
+    width: '100%',
+    // CHANGE 1: Made wider
+    maxWidth: '1000px', 
+    position: 'relative',
+    boxShadow: '10px 10px 0px rgba(0,0,0,0.5)',
+  },
+  windowHeader: {
+    background: '#3b4cca',
+    borderBottom: '4px solid #000',
+    padding: '8px 12px',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    color: 'white',
   },
-  rightColumn: {
-    flex: '1 1 640px',
-    minWidth: 300,
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '20px',
-    alignItems: 'start'
+  windowDots: { display: 'flex', gap: '4px' },
+  dot: { width: '8px', height: '8px', background: 'white', border: '2px solid #000', display: 'block' },
+  headerTitle: { fontSize: '10px', letterSpacing: '1px' },
+  
+  windowBody: {
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
-
-  header: {
+  
+  pageHeader: {
+    width: '100%',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '40px',
-    flexWrap: 'wrap',
-    gap: '20px',
+    marginBottom: '25px',
+    borderBottom: '2px dashed #ccc',
+    paddingBottom: '10px'
   },
-  title: { fontSize: '2.5em', color: 'white' },
-  logoutButton: { background: '#ff6b6b', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', fontSize: '1em' },
+  welcomeText: { fontSize: '14px', color: '#000' },
+  logoutButton: {
+    background: 'transparent',
+    color: '#d30a40',
+    border: '2px solid #d30a40',
+    padding: '5px 10px',
+    cursor: 'pointer',
+    fontSize: '10px',
+    fontFamily: "'Press Start 2P', monospace",
+    textTransform: 'uppercase'
+  },
 
-  statsOverview: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px' },
-  statCard: { background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '15px', display: 'flex', alignItems: 'center', gap: '15px', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' },
-  statIcon: { fontSize: '2em' },
-  statInfo: { color: 'white' },
-  statValue: { fontSize: '1.8em', fontWeight: 'bold' },
-  statLabel: { opacity: 0.8, fontSize: '0.9em' },
+  statsRow: {
+    display: 'flex',
+    gap: '15px',
+    width: '100%',
+    marginBottom: '30px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  statBox: {
+    border: '3px solid #000',
+    background: '#fff',
+    padding: '10px',
+    flex: '1 1 120px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    boxShadow: '4px 4px 0 #ddd',
+    textAlign: 'center'
+  },
+  statLabel: { fontSize: '10px', color: '#555', marginBottom: '8px' },
+  statValue: { fontSize: '12px', fontWeight: 'bold' },
 
-  encourageBox: { padding: 0, background: 'none', border: 'none', color: 'white', textAlign: 'left' },
-  encourageEmoji: { fontSize: '5em', marginBottom: '10px' },
-  encourageTitle: { margin: 0, fontSize: '3.0em', marginBottom: '15px', lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.5)' },
-  encourageText: { fontSize: '1.2em', margin: 0, marginBottom: '20px', lineHeight: 1.4, opacity: 0.95 },
-  trophyProgress: { height: '10px', background: 'rgba(255,255,255,0.12)', borderRadius: '8px', overflow: 'hidden', marginBottom: '6px', maxWidth: '400px' },
-  trophyBar: { height: '100%', background: 'linear-gradient(90deg,#FFD700,#FFAA00)', borderRadius: '8px 0 0 8px', transition: 'width 400ms ease' },
-  progressLabel: { fontSize: '0.9em', opacity: 0.9 },
+  // Pokemon Section
+  pokemonSection: {
+    width: '100%',
+    maxWidth: '400px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  sectionHeader: {
+    background: '#fff',
+    border: '2px solid #000',
+    padding: '5px 10px',
+    fontSize: '10px',
+    marginBottom: '15px',
+    zIndex: 2,
+  },
+  pokemonCard: {
+    width: '100%',
+    background: '#70cfa3',
+    border: '3px solid #000',
+    padding: '20px',
+    boxShadow: '6px 6px 0 rgba(0,0,0,0.2)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    boxSizing: 'border-box',
+  },
+  // CHANGE 2: Updated Grass Container to contain the sprite
+  grassContainer: {
+    width: '150px',
+    height: '150px',
+    backgroundColor: '#77C959',
+    borderRadius: '50%',
+    boxShadow: '0 4px 0 0 #4B9032',
+    position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: '15px',
+    border: '2px solid #000',
+    padding: '15px',
+    overflow: 'hidden' // Ensures sprite doesn't go outside
+  },
+  // CHANGE 3: Updated Sprite to sit normally inside container
+  pokemonSprite: {
+    // position absolute removed
+    // bottom removed
+    width: '100px',
+    height: '100px',
+    imageRendering: 'pixelated',
+    // zIndex removed
+    position: 'relative',
+  },
+  pokemonName: { 
+    fontSize: '16px', 
+    margin: '10px 0',
+    color: '#000',
+    textShadow: '2px 2px 0 #fff' 
+  },
+  statList: {
+    width: '100%',
+    background: 'rgba(255,255,255,0.6)',
+    border: '2px solid #000',
+    padding: '10px',
+    boxSizing: 'border-box',
+    fontSize: '10px',
+  },
+  statRow: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    marginBottom: '5px' 
+  },
 
-  sectionTitle: { fontSize: '1.4em', color: 'white', marginBottom: '20px', textAlign: 'center' },
-
-  quickActionsCard: { background: 'rgba(255,255,255,0.1)', padding: '30px', borderRadius: '20px', backdropFilter: 'blur(10px)', border: '2px solid rgba(255,255,255,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
-  actionGrid: { display: 'grid', gridTemplateColumns: '1fr', width: '100%', gap: '20px' },
-  actionCard: { background: 'rgba(255,255,255,0.2)', padding: '20px', borderRadius: '15px', textDecoration: 'none', color: 'white', textAlign: 'center', transition: 'transform 0.3s ease' },
-  actionIcon: { fontSize: '2.6em', marginBottom: '8px' },
-  actionText: { fontSize: '1.05em', fontWeight: 'bold' },
-
-  starterSectionCard: { background: 'rgba(255,255,255,0.1)', borderRadius: '20px', padding: '30px', backdropFilter: 'blur(10px)', border: '2px solid rgba(255,255,255,0.2)', textAlign: 'center' },
-  pokemonCard: { display: 'block' },
-  pokemonSprite: { width: '150px', height: '150px', imageRendering: 'pixelated', marginBottom: '10px' },
-  pokemonName: { fontSize: '1.5em', marginBottom: '10px', textTransform: 'capitalize', color: 'white' },
-  pokemonTypes: { display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '12px' },
-  pokemonStats: { color: 'white', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '10px' },
-  statRow: { display: 'flex', justifyContent: 'space-between', marginBottom: '5px' },
-
-  noStarterCard: { textAlign: 'center', background: 'rgba(255,255,255,0.1)', padding: '30px', borderRadius: '20px', backdropFilter: 'blur(10px)', color: 'white', border: '2px solid rgba(255,255,255,0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' },
-  chooseButton: { background: '#ffcb05', color: '#2a75bb', border: 'none', padding: '12px 22px', borderRadius: '8px', fontSize: '1em', cursor: 'pointer', marginTop: '12px' }
+  // No Starter State
+  noStarter: {
+    textAlign: 'center',
+    background: '#fff',
+    padding: '30px',
+    border: '3px solid #000',
+    boxShadow: '4px 4px 0 #ccc',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: '300px'
+  },
+  warningIcon: {
+    fontSize: '24px',
+    color: '#d30a40',
+    fontWeight: 'bold',
+    marginBottom: '10px',
+    animation: 'blink 1s infinite'
+  },
+  chooseButton: {
+    background: '#ffcb05',
+    border: '2px solid #000',
+    padding: '12px 20px',
+    fontSize: '10px',
+    cursor: 'pointer',
+    boxShadow: '4px 4px 0 #000',
+    fontFamily: "'Press Start 2P', monospace",
+    textTransform: 'uppercase',
+    color: '#000'
+  }
 };
 
 export default Dashboard;

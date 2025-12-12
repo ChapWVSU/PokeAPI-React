@@ -8,6 +8,15 @@ function Leaderboards() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  // 1. Inject Pixel Font
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => document.head.removeChild(link);
+  }, []);
+
   useEffect(() => {
     loadLeaderboards();
   }, []);
@@ -28,7 +37,7 @@ function Leaderboards() {
       case 1: return '#FFD700'; // Gold
       case 2: return '#C0C0C0'; // Silver
       case 3: return '#CD7F32'; // Bronze
-      default: return '#3498db';
+      default: return '#fff';   // Standard White
     }
   };
 
@@ -41,98 +50,123 @@ function Leaderboards() {
     }
   };
 
+  const pixelFont = "'Press Start 2P', monospace";
+
   if (loading) {
     return (
-      <div style={styles.pageContainer}>
-        <Navbar />
-        <div style={styles.loadingContainer}>
-          <div style={styles.loadingSpinner}></div>
-          <p>Loading leaderboards...</p>
-        </div>
+      <div style={{ ...styles.container, justifyContent: 'center', alignItems: 'center', color: 'white', fontFamily: pixelFont }}>
+        <h2 style={{animation: 'blink 1s infinite'}}>FETCHING DATA...</h2>
+        <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
       </div>
     );
   }
 
   return (
-    <div style={styles.pageContainer}>
-      <Navbar />
+    <div style={{ ...styles.container, fontFamily: pixelFont }}>
       
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🏆 Leaderboards</h1>
-          <p style={styles.subtitle}>Top trainers by trophies</p>
-        </div>
+      {/* Background Pattern */}
+      <div style={styles.backgroundPattern}></div>
 
-        <div style={styles.leaderboardsContainer}>
-          {leaderboards.length === 0 ? (
-            <div style={styles.emptyState}>
-              <h2>No battles yet!</h2>
-              <p>Be the first to earn trophies and appear on the leaderboard!</p>
-            </div>
-          ) : (
-            <div style={styles.leaderboardsList}>
-              {leaderboards.map((player, index) => (
-                <div 
-                  key={player.username} 
-                  style={{
-                    ...styles.leaderboardItem,
-                    ...(player.username === user?.username ? styles.currentUser : {})
-                  }}
-                >
-                  <div style={styles.rankSection}>
-                    <div 
-                      style={{
-                        ...styles.rankCircle,
-                        background: getRankColor(index + 1)
-                      }}
-                    >
-                      {getRankIcon(index + 1)}
-                    </div>
-                  </div>
-                  
-                  <div style={styles.playerInfo}>
-                    <div style={styles.playerName}>
-                      {player.username}
-                      {player.username === user?.username && (
-                        <span style={styles.youBadge}> (You)</span>
-                      )}
-                    </div>
-                    <div style={styles.playerStats}>
-                      <span style={styles.stat}>Wins: {player.wins || 0}/{player.totalBattles || 0}</span>
-                    </div>
-                  </div>
-                  
-                  <div style={styles.trophySection}>
-                    <div style={styles.trophyCount}>
-                      🏆 {player.trophies}
-                    </div>
-                    <div style={styles.coinCount}>
-                      🪙 {player.coins}
-                    </div>
-                  </div>
+      {/* Navbar Outside */}
+      <div style={{zIndex: 10, width: '100%'}}>
+        <Navbar />
+      </div>
+
+      <div style={styles.gameContent}>
+        <h1 style={{ ...styles.mainTitle, fontFamily: pixelFont }}>LEADERBOARDS</h1>
+
+        {/* Console Frame */}
+        <div style={styles.windowFrame}>
+            
+            {/* Header Bar */}
+            <div style={styles.windowHeader}>
+                <div style={styles.windowDots}>
+                    <span style={styles.dot}></span>
+                    <span style={styles.dot}></span>
                 </div>
-              ))}
+                <span style={styles.headerTitle}>HALL OF FAME</span>
             </div>
-          )}
-        </div>
 
-        <div style={styles.statsSummary}>
-          <div style={styles.statCard}>
-            <div style={styles.statNumber}>{leaderboards.length}</div>
-            <div style={styles.statLabel}>Total Players</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statNumber}>
-              {leaderboards[0]?.trophies || 0}
+            {/* Inner Content Body */}
+            <div style={styles.windowBody}>
+                
+                <div style={styles.pageHeader}>
+                  <div style={styles.headerText}>:: TOP TRAINERS ::</div>
+                </div>
+
+                {/* Stats Summary Row */}
+                <div style={styles.summaryRow}>
+                    <div style={styles.summaryBox}>
+                        <div style={styles.summaryLabel}>PLAYERS</div>
+                        <div style={styles.summaryValue}>{leaderboards.length}</div>
+                    </div>
+                    <div style={styles.summaryBox}>
+                        <div style={styles.summaryLabel}>TOP SCORE</div>
+                        <div style={{...styles.summaryValue, color: '#FFD700'}}>
+                            {leaderboards[0]?.trophies || 0}
+                        </div>
+                    </div>
+                    <div style={styles.summaryBox}>
+                        <div style={styles.summaryLabel}>AVG WINS</div>
+                        <div style={styles.summaryValue}>
+                             {Math.round(leaderboards.reduce((acc, player) => acc + (player.wins || 0), 0) / leaderboards.length) || 0}
+                        </div>
+                    </div>
+                </div>
+
+                {/* LEADERBOARD LIST */}
+                <div style={styles.listContainer}>
+                  {leaderboards.length === 0 ? (
+                    <div style={styles.emptyState}>
+                      <p>NO DATA AVAILABLE.</p>
+                      <p style={{marginTop: '10px', fontSize: '8px', color: '#666'}}>BE THE FIRST CHAMPION!</p>
+                    </div>
+                  ) : (
+                    <div style={styles.leaderboardsList}>
+                      {leaderboards.map((player, index) => {
+                        const isCurrentUser = player.username === user?.username;
+                        const rankColor = getRankColor(index + 1);
+                        
+                        return (
+                            <div 
+                              key={player.username} 
+                              style={{
+                                ...styles.leaderboardItem,
+                                ...(isCurrentUser ? styles.currentUserItem : {})
+                              }}
+                            >
+                              {/* Rank Section */}
+                              <div style={{
+                                  ...styles.rankBadge,
+                                  backgroundColor: index < 3 ? rankColor : '#eee'
+                              }}>
+                                {getRankIcon(index + 1)}
+                              </div>
+                              
+                              {/* Player Info */}
+                              <div style={styles.playerInfo}>
+                                <div style={styles.nameRow}>
+                                    <span style={styles.playerName}>{player.username.toUpperCase()}</span>
+                                    {isCurrentUser && <span style={styles.youTag}>◀ YOU</span>}
+                                </div>
+                                <div style={styles.subStats}>
+                                   WINS: {player.wins}/{player.totalBattles || 0}
+                                </div>
+                              </div>
+                              
+                              {/* Trophies Section */}
+                              <div style={styles.trophySection}>
+                                <div style={styles.trophyCount}>🏆 {player.trophies}</div>
+                                <div style={styles.coinCount}>🪙 {player.coins}</div>
+                              </div>
+                            </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
             </div>
-            <div style={styles.statLabel}>Top Trophies</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statNumber}>
-              {Math.round(leaderboards.reduce((acc, player) => acc + (player.wins || 0), 0) / leaderboards.length) || 0}
-            </div>
-            <div style={styles.statLabel}>Avg Wins/Player</div>
-          </div>
         </div>
       </div>
     </div>
@@ -140,152 +174,195 @@ function Leaderboards() {
 }
 
 const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  },
+  // 1. Container
   container: {
-    padding: '20px',
-    paddingTop: '80px',
-    maxWidth: '800px',
-    margin: '0 auto',
-  },
-  loadingContainer: {
+    minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: '50vh',
-    color: 'white',
-    textAlign: 'center',
+    justifyContent: 'flex-start',
+    position: 'relative',
+    overflowY: 'auto',
+    backgroundColor: '#202020',
   },
-  loadingSpinner: {
-    border: '4px solid rgba(255,255,255,0.3)',
-    borderTop: '4px solid white',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '20px',
+  backgroundPattern: {
+    position: 'absolute',
+    top: 0, left: 0, width: '100%', height: '100%',
+    opacity: 0.1,
+    backgroundImage: `
+        linear-gradient(45deg, #000 25%, transparent 25%),
+        linear-gradient(-45deg, #000 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #000 75%),
+        linear-gradient(-45deg, transparent 75%, #000 75%)
+    `,
+    backgroundSize: '20px 20px',
+    zIndex: 0,
   },
-  header: {
-    textAlign: 'center',
+  gameContent: {
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    padding: '20px',
+    marginTop: '20px',
     marginBottom: '40px',
-    color: 'white',
   },
-  title: {
-    fontSize: '3em',
-    marginBottom: '10px',
-    textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-  },
-  subtitle: {
-    fontSize: '1.2em',
-    opacity: 0.9,
-  },
-  leaderboardsContainer: {
-    background: 'rgba(255,255,255,0.1)',
-    borderRadius: '20px',
-    padding: '30px',
-    backdropFilter: 'blur(10px)',
-    border: '2px solid rgba(255,255,255,0.2)',
-    marginBottom: '30px',
-  },
-  emptyState: {
+  mainTitle: {
+    color: '#ffde00',
+    fontSize: '40px',
+    margin: '0 0 20px 0',
     textAlign: 'center',
-    color: 'white',
-    padding: '40px',
+    textShadow: '4px 4px 0 #3b4cca, -2px -2px 0 #2a3a9a',
+    letterSpacing: '4px',
   },
+
+  // 2. Window Frame
+  windowFrame: {
+    background: '#f8f8f8',
+    border: '4px solid #000',
+    width: '100%',
+    maxWidth: '800px',
+    position: 'relative',
+    boxShadow: '10px 10px 0px rgba(0,0,0,0.5)',
+  },
+  windowHeader: {
+    background: '#3b4cca',
+    borderBottom: '4px solid #000',
+    padding: '8px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    color: 'white',
+  },
+  windowDots: { display: 'flex', gap: '4px' },
+  dot: { width: '8px', height: '8px', background: 'white', border: '2px solid #000', display: 'block' },
+  headerTitle: { fontSize: '10px', letterSpacing: '1px' },
+  
+  windowBody: {
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  
+  pageHeader: {
+    marginBottom: '20px',
+    borderBottom: '2px dashed #ccc',
+    paddingBottom: '10px',
+    width: '100%',
+    textAlign: 'center'
+  },
+  headerText: {
+    margin: 0,
+    fontSize: '14px',
+    textAlign: 'center',
+    color: '#000',
+  },
+
+  // 3. Stats Summary (Top Boxes)
+  summaryRow: {
+    display: 'flex',
+    gap: '15px',
+    width: '100%',
+    marginBottom: '20px',
+    justifyContent: 'center',
+  },
+  summaryBox: {
+    border: '3px solid #000',
+    background: '#fff',
+    padding: '10px',
+    flex: 1,
+    textAlign: 'center',
+    boxShadow: '4px 4px 0 #ddd'
+  },
+  summaryLabel: { fontSize: '8px', color: '#666', marginBottom: '5px' },
+  summaryValue: { fontSize: '12px', fontWeight: 'bold' },
+
+  // 4. List Container
+  listContainer: {
+    width: '100%',
+    maxHeight: '500px',
+    overflowY: 'auto',
+    border: '2px solid #000',
+    background: '#eee', // Recessed look
+    padding: '10px',
+    boxSizing: 'border-box'
+  },
+  emptyState: { textAlign: 'center', padding: '40px', fontSize: '10px' },
+  
   leaderboardsList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '15px',
+    gap: '10px',
   },
+  
+  // 5. Leaderboard Item
   leaderboardItem: {
     display: 'flex',
     alignItems: 'center',
-    background: 'rgba(255,255,255,0.15)',
-    borderRadius: '15px',
-    padding: '20px',
-    transition: 'all 0.3s ease',
-    border: '2px solid transparent',
+    background: '#fff',
+    border: '2px solid #000',
+    padding: '10px',
+    boxShadow: '2px 2px 0 rgba(0,0,0,0.1)',
+    transition: 'transform 0.1s',
   },
-  currentUser: {
-    background: 'rgba(52, 152, 219, 0.3)',
-    border: '2px solid #3498db',
-    transform: 'scale(1.02)',
+  currentUserItem: {
+    background: '#fffbe6', // Light yellow highlight
+    border: '2px solid #ffcb05',
+    transform: 'translateX(-4px)',
+    boxShadow: '4px 4px 0 rgba(0,0,0,0.1)',
   },
-  rankSection: {
-    width: '60px',
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  rankCircle: {
-    width: '50px',
-    height: '50px',
-    borderRadius: '50%',
+  
+  rankBadge: {
+    width: '35px',
+    height: '35px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    border: '2px solid #000',
+    marginRight: '15px',
+    fontSize: '12px',
     fontWeight: 'bold',
-    fontSize: '1.2em',
-    color: 'white',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+    boxShadow: '2px 2px 0 rgba(0,0,0,0.1)'
   },
+  
   playerInfo: {
     flex: 1,
-    color: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center'
   },
+  nameRow: { display: 'flex', alignItems: 'center' },
   playerName: {
-    fontSize: '1.3em',
+    fontSize: '12px',
     fontWeight: 'bold',
-    marginBottom: '5px',
+    color: '#000',
+    marginRight: '10px'
   },
-  youBadge: {
-    color: '#3498db',
-    fontWeight: 'normal',
+  youTag: {
+    fontSize: '8px',
+    color: '#d30a40',
+    animation: 'blink 1s infinite'
   },
-  playerStats: {
-    fontSize: '0.9em',
-    opacity: 0.8,
+  subStats: {
+    fontSize: '8px',
+    color: '#666',
+    marginTop: '4px'
   },
-  stat: {
-    marginRight: '15px',
-  },
+  
   trophySection: {
     textAlign: 'right',
-    color: 'white',
   },
   trophyCount: {
-    fontSize: '1.5em',
+    fontSize: '12px',
     fontWeight: 'bold',
-    marginBottom: '5px',
+    color: '#000',
+    marginBottom: '4px'
   },
   coinCount: {
-    fontSize: '1em',
-    opacity: 0.8,
-  },
-  statsSummary: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-  },
-  statCard: {
-    background: 'rgba(255,255,255,0.1)',
-    padding: '25px',
-    borderRadius: '15px',
-    textAlign: 'center',
-    color: 'white',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255,255,255,0.2)',
-  },
-  statNumber: {
-    fontSize: '2.5em',
-    fontWeight: 'bold',
-    marginBottom: '10px',
-  },
-  statLabel: {
-    fontSize: '1em',
-    opacity: 0.8,
+    fontSize: '8px',
+    color: '#555'
   }
 };
 
