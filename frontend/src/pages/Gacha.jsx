@@ -74,8 +74,8 @@ function Gacha() {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Choose Your Starter Pokemon!</h1>
-      <p style={styles.subtitle}>Keep rolling until you find the perfect partner!</p>
+      <h1 style={styles.title}>Here's Your Starter Pokemon!</h1>
+      <p style={styles.subtitle}>Your bond together is destiny!</p>
       
       <div style={{
         ...styles.pokemonDisplay,
@@ -104,15 +104,7 @@ function Gacha() {
         ) : null}
       </div>
 
-      <div style={styles.controls}>
-        <button 
-          onClick={rollPokemon} 
-          disabled={loading || rolling}
-          style={styles.rollButton}
-        >
-          {rolling ? 'Rolling...' : 'Roll Again'}
-        </button>
-        
+      <div style={styles.controls}>      
         <button 
           onClick={choosePokemon} 
           disabled={!currentPokemon || loading}
