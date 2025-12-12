@@ -44,8 +44,8 @@ export const pokemonAPI = {
   getUserStarter: () => 
     api.get('/user-starter').then(res => res.data),
   
-  submitBattleResult: (battleData) => 
-    api.post('/battle-result', { battleData }).then(res => res.data),
+  submitBattleResult: (battleData) =>
+  api.post('/battle-result', battleData).then(res => res.data),
   
   getUserStats: () => 
     api.get('/user-stats').then(res => res.data),
