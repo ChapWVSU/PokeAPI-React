@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pokemonAPI } from '../services/api';
 import Navbar from '../components/Navbar';
@@ -12,6 +12,10 @@ function PaidGacha() {
   const [error, setError] = useState('');
   const [choosing, setChoosing] = useState(false);
   const navigate = useNavigate();
+  const ballRef = useRef(null);
+  const boxRef = useRef(null);
+  const backdropRef = useRef(null);
+  const hasInitialFall = useRef(false);
 
   // Load initial coins
   const loadUserCoins = async () => {
@@ -41,6 +45,11 @@ function PaidGacha() {
       const result = await pokemonAPI.rollPaidGacha();
       setCurrentPokemon(result.pokemon);
       setCoins(result.newCoins);
+      
+      // Trigger catch animation after pokemon is set
+      setTimeout(() => {
+        startCatchAnimation();
+      }, 100);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Failed to roll Pokémon!');
@@ -64,6 +73,85 @@ function PaidGacha() {
       setError("Failed to choose Pokémon!");
       setChoosing(false);
     }
+  };
+
+  // Animation helpers (pokeball)
+  useEffect(() => {
+    const ball = ballRef.current;
+    if (!ball) return;
+
+    const onAnimEnd = (e) => {
+      if (e.animationName === 'fall') {
+        hasInitialFall.current = true;
+      }
+      if (e.animationName === 'blink') {
+        // transform after blink
+        ball.classList.add('transformed');
+        // show box and backdrop after transition
+        setTimeout(() => {
+          if (boxRef.current) boxRef.current.style.display = 'block';
+          if (backdropRef.current) backdropRef.current.style.display = 'block';
+        }, 1000);
+      }
+    };
+
+    ball.addEventListener('animationend', onAnimEnd);
+    return () => ball.removeEventListener('animationend', onAnimEnd);
+  }, []);
+
+  useEffect(() => {
+    // initial fall on first mount only
+    const ball = ballRef.current;
+    if (!ball) return;
+    if (!hasInitialFall.current) {
+      setTimeout(() => {
+        ball.classList.remove('hidden');
+        ball.classList.add('fall');
+      }, 800);
+    }
+  }, []);
+
+  const triggerShake = () => {
+    const ball = ballRef.current;
+    if (!ball) return;
+    ball.classList.remove('shake');
+    // force reflow
+    // eslint-disable-next-line no-unused-expressions
+    void ball.offsetWidth;
+    ball.classList.add('shake');
+  };
+
+  const startCatchAnimation = () => {
+    const ball = ballRef.current;
+    let shakes = 0;
+
+    function doShake() {
+      triggerShake();
+      setTimeout(() => {
+        shakes++;
+        if (shakes < 3) {
+          doShake();
+        } else {
+          ball.classList.add('blink');
+        }
+      }, 800);
+    }
+
+    doShake();
+  };
+
+  const resetFromBackdrop = () => {
+    if (boxRef.current) boxRef.current.style.display = 'none';
+    if (backdropRef.current) backdropRef.current.style.display = 'none';
+    const ball = ballRef.current;
+    if (!ball) return;
+    ball.classList.remove('transformed');
+    ball.classList.add('untransformed');
+    setTimeout(() => {
+      ball.classList.remove('untransformed');
+      ball.classList.remove('blink', 'shake', 'fall');
+      setChoosing(false);
+    }, 1000);
   };
 
   const typeColors = {
@@ -96,6 +184,23 @@ function PaidGacha() {
     background: typeColors[type] || '#A8A878'
   });
 
+  const handleCancel = () => {
+    // Reset animation state and hide box
+    if (boxRef.current) boxRef.current.style.display = 'none';
+    if (backdropRef.current) backdropRef.current.style.display = 'none';
+    const ball = ballRef.current;
+    if (!ball) return;
+    ball.classList.remove('transformed');
+    ball.classList.add('untransformed');
+    setTimeout(() => {
+      ball.classList.remove('untransformed');
+      ball.classList.remove('blink', 'shake', 'fall');
+      setCurrentPokemon(null);
+      setChoosing(false);
+      hasInitialFall.current = false;
+    }, 1000);
+  };
+
   return (
     <div style={styles.pageContainer}>
       <Navbar />
@@ -106,62 +211,62 @@ function PaidGacha() {
 
         {error && <p style={styles.error}>{error}</p>}
 
-        <div
-          style={{
-            ...styles.pokemonDisplay,
-            ...(rolling ? styles.rolling : {})
-          }}
-        >
-          {loading ? (
-            <div style={styles.loading}>Rolling...</div>
-          ) : currentPokemon ? (
-            <div style={styles.pokemonCard}>
-              <img
-                src={currentPokemon.sprites.front_default}
-                alt={capitalize(currentPokemon.name)}
-                style={styles.sprite}
-              />
-              <h2 style={styles.pokemonName}>
-                {capitalize(currentPokemon.name)}
-              </h2>
+        {/* Pokeball animation stage */}
+        <div id="backdrop" ref={backdropRef} style={{ display: 'none' }}></div>
 
-              <div style={styles.types}>
-                {currentPokemon.types.map((t) => (
-                  <span key={t} style={getTypeStyle(t)}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-              </div>
-          ) : (
-            <div style={styles.placeholder}>
-              Roll to get a new Pokémon!
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <div className="stage">
+            <div className="pokeball hidden" id="ball" ref={ballRef}></div>
+            <div id="pokemonBox" ref={boxRef} style={{ display: 'none' }}>
+              {currentPokemon && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <img
+                    src={currentPokemon.sprites.front_default}
+                    alt={capitalize(currentPokemon.name)}
+                    style={{ width: 400, height: 400, imageRendering: 'pixelated' }}
+                  />
+                  <div style={{ marginTop: 6, marginBottom: 16, fontWeight: '700', fontSize: '1.2em', color: '#000' }}>{capitalize(currentPokemon.name)}</div>
+                  <div style={{ display: 'flex', gap: '12px', flexDirection: 'column', width: '100%' }}>
+                    <button
+                      onClick={choosePokemon}
+                      disabled={choosing}
+                      style={{
+                        ...styles.boxButton,
+                        background: '#2ecc71',
+                        color: 'white'
+                      }}
+                    >
+                      {choosing ? 'Setting as Starter...' : 'Choose as New Starter'}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      style={{
+                        ...styles.boxButton,
+                        background: '#e74c3c',
+                        color: 'white'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         <div style={styles.controls}>
           <button
             onClick={rollPokemon}
-            disabled={loading || rolling || coins < 150}
+            disabled={loading || rolling || coins < 150 || currentPokemon !== null}
             style={{
               ...styles.button,
-              background: coins < 150 ? '#777' : '#ffcb05',
-              color: coins < 150 ? '#ccc' : '#2a75bb'
+              background: coins < 150 || currentPokemon !== null ? '#777' : '#ffcb05',
+              color: coins < 150 || currentPokemon !== null ? '#ccc' : '#2a75bb'
             }}
           >
-            {loading ? 'Rolling...' : 'Roll Again (150 Coins)'}
+            {loading ? 'Rolling...' : 'Roll (150 Coins)'}
           </button>
-
-          {currentPokemon && (
-            <button
-              onClick={choosePokemon}
-              disabled={choosing}
-              style={styles.chooseButton}
-            >
-              {choosing ? 'Setting as Starter...' : 'Choose as New Starter'}
-            </button>
-          )}
 
           <button
             onClick={() => navigate('/dashboard')}
@@ -302,6 +407,15 @@ const styles = {
     fontWeight: 'bold',
     transition: 'all 0.3s ease'
   },
+  boxButton: {
+    padding: '12px 20px',
+    fontSize: '0.95em',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: 'all 0.3s ease'
+  },
   backButton: {
     padding: '15px 30px',
     fontSize: '1.1em',
@@ -330,18 +444,126 @@ const styles = {
   }
 };
 
-// Add hover effects
-const addHoverEffects = () => {
-  const style = document.createElement('style');
-  style.textContent = `
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-  `;
-  document.head.appendChild(style);
-};
+// Inject pokeball + hover styles once
+(function injectStyles() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('pokeball-styles')) return;
 
-addHoverEffects();
+  const css = `
+.hidden { opacity: 0; }
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  height: 350px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.pokeball {
+  width: 240px;
+  height: 240px;
+  background:
+    radial-gradient(white 20px,
+      black 21px 22px,
+      white 23px 30px,
+      black 31px 40px,
+      transparent 41px),
+    linear-gradient(to bottom, red 0 100px, black 101px 120px, white 121px 125%);
+  border-radius: 50%;
+  border: 10px solid black;
+  box-shadow: inset -16px -8px 0 0 rgba(0,0,0,0.2);
+  position: relative;
+  z-index: 1;
+  transform-origin: center;
+  pointer-events: none;
+  transition: background 1s ease-in-out, background-position 1s ease-in-out;
+}
+.transformed {
+  background:
+    radial-gradient(white 20px,
+      black 21px 22px,
+      white 23px 30px,
+      black 31px 40px,
+      transparent 41px),
+    linear-gradient(to bottom, red 0 99px, black 100px 113px, transparent 114px 125%),
+    linear-gradient(to bottom, gray 0 111px, black 112px 126px, white 127px 125%);
+  background-position:
+    center -50px,
+    center -50px,
+    center 37px;
+  background-repeat: no-repeat;
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%;
+}
+.untransformed {
+  background:
+    radial-gradient(white 20px,
+      black 21px 22px,
+      white 23px 30px,
+      black 31px 40px,
+      transparent 41px),
+    linear-gradient(to bottom, red 0 99px, black 100px 113px, transparent 114px 125%),
+    linear-gradient(to bottom, gray 0 99px, black 100px 113px, white 114px 125%);
+  background-position:
+    center 0px,
+    center 0px,
+    center 5px;
+  background-repeat: no-repeat;
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%;
+}
+@keyframes fall {
+  0% { transform: translateY(-200%); opacity: 1; }
+  60% { transform: translateY(0); }
+  80% { transform: translateY(-10%); }
+  100% { transform: translateY(0); }
+}
+@keyframes shake {
+  0% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-10px) rotate(-20deg); }
+  30% { transform: translateX(10px) rotate(20deg); }
+  50% { transform: translateX(-10px) rotate(-10deg); }
+  60% { transform: translateX(10px) rotate(10deg); }
+  100% { transform: translateX(0) rotate(0); }
+}
+@keyframes blink { 75% { filter: brightness(50%); } }
+.fall { animation: fall 0.5s ease-in-out forwards; }
+.shake { animation: shake 0.5s ease-in-out; }
+.blink { animation: blink 0.25s ease-in-out 3; }
+#pokemonBox {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  padding: 20px 25px 25px 25px;
+  text-align: center;
+  background: #fff;
+  border: 3px solid #000;
+  border-radius: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  z-index: 3;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  color: #333;
+}
+#backdrop { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.25); z-index:2; }
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+`;
+  const style = document.createElement('style');
+  style.id = 'pokeball-styles';
+  style.textContent = css;
+  document.head.appendChild(style);
+})();
 
 export default PaidGacha;
